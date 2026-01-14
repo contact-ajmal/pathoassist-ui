@@ -8,13 +8,17 @@ import { AnalysisScreen } from '@/components/screens/AnalysisScreen';
 import { ReviewScreen } from '@/components/screens/ReviewScreen';
 import { ExportScreen } from '@/components/screens/ExportScreen';
 import { SettingsModal } from '@/components/modals/SettingsModal';
+import { PatientManagementModal } from '@/components/patient/PatientManagementModal';
 import { WorkflowStep } from '@/types/workflow';
+import { PatientRecord } from '@/types/patient';
 import { toast } from 'sonner';
 
 export default function Index() {
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('upload');
   const [completedSteps, setCompletedSteps] = useState<WorkflowStep[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [patientModalOpen, setPatientModalOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
 
   const completeStep = (step: WorkflowStep) => {
     if (!completedSteps.includes(step)) {
@@ -43,6 +47,10 @@ export default function Index() {
     toast.success('Case saved to local archive');
   };
 
+  const handlePatientSelect = (patient: PatientRecord) => {
+    setSelectedPatient(patient);
+  };
+
   const renderScreen = () => {
     switch (currentStep) {
       case 'upload':
@@ -67,6 +75,8 @@ export default function Index() {
       <Header 
         onSettingsClick={() => setSettingsOpen(true)} 
         onExportClick={handleExportClick}
+        onPatientClick={() => setPatientModalOpen(true)}
+        selectedPatient={selectedPatient}
       />
       
       <div className="flex-1 flex overflow-hidden">
@@ -84,6 +94,13 @@ export default function Index() {
       <SettingsModal 
         open={settingsOpen} 
         onOpenChange={setSettingsOpen} 
+      />
+
+      <PatientManagementModal
+        open={patientModalOpen}
+        onOpenChange={setPatientModalOpen}
+        onPatientSelect={handlePatientSelect}
+        selectedPatient={selectedPatient}
       />
     </div>
   );

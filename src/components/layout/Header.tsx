@@ -1,12 +1,15 @@
-import { Settings, Download, Cpu, MonitorDot, HardDrive, Wifi } from 'lucide-react';
+import { Settings, Download, Cpu, MonitorDot, HardDrive, Wifi, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PatientRecord } from '@/types/patient';
 
 interface HeaderProps {
   onSettingsClick: () => void;
   onExportClick: () => void;
+  onPatientClick: () => void;
+  selectedPatient?: PatientRecord | null;
 }
 
-export function Header({ onSettingsClick, onExportClick }: HeaderProps) {
+export function Header({ onSettingsClick, onExportClick, onPatientClick, selectedPatient }: HeaderProps) {
   return (
     <header className="h-14 bg-header text-header-foreground border-b border-sidebar-border flex items-center justify-between px-4 shrink-0">
       {/* Logo and App Name */}
@@ -20,8 +23,28 @@ export function Header({ onSettingsClick, onExportClick }: HeaderProps) {
         </div>
       </div>
 
-      {/* Center - Status */}
+      {/* Center - Status & Patient */}
       <div className="flex items-center gap-6">
+        {/* Patient Indicator */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onPatientClick}
+          className="h-9 px-3 text-header-foreground/90 hover:text-header-foreground hover:bg-header-foreground/10 border border-header-foreground/20"
+        >
+          <User className="w-4 h-4 mr-2" />
+          {selectedPatient ? (
+            <span className="font-medium">
+              {selectedPatient.lastName}, {selectedPatient.firstName}
+              <span className="ml-2 text-xs text-header-foreground/60 font-mono">
+                {selectedPatient.mrn}
+              </span>
+            </span>
+          ) : (
+            <span>Select Patient</span>
+          )}
+        </Button>
+
         {/* Offline Status */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/20 rounded-full">
