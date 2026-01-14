@@ -1,73 +1,97 @@
-# Welcome to your Lovable project
+# PathoAssist
 
-## Project info
+**Offline WSI Pathology Report Generator**
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+PathoAssist is a medical-grade web application designed for pathology professionals to analyze whole slide images (WSI) and generate AI-assisted pathology reports offline.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Whole Slide Image Analysis**: Support for multiple formats (.SVS, .TIFF, .NDPI, .MRXS)
+- **Patient Management**: Integration with EHR systems (Epic, Cerner, HL7, FHIR)
+- **6-Step Workflow**: Upload → Viewer → ROI Selection → AI Analysis → Review → Export
+- **Offline Functionality**: Full local AI processing without internet connectivity
+- **Interactive Viewer**: High-resolution slide navigation with zoom/pan
+- **ROI Selection**: Mark tumor, inflammatory, and normal tissue regions
+- **AI-Assisted Analysis**: Automated pathology analysis with confidence scoring
+- **Report Generation**: Human-validated reports with export capabilities
+- **Local Case Archiving**: Store and reference cases locally
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **React** 18.3 + **TypeScript** 5.8
+- **Vite** - Build tool and dev server
+- **shadcn/ui** + **Radix UI** - Accessible component library
+- **Tailwind CSS** - Utility-first styling
+- **TanStack React Query** - Server state management
+- **React Hook Form** + **Zod** - Form validation
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js (v18 or higher)
+- npm or yarn
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Installation
 
-Follow these steps:
+```bash
+# Clone the repository
+git clone <repository-url>
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Navigate to the project directory
+cd pathoassist-ui
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Development
 
-**Use GitHub Codespaces**
+```bash
+# Start development server
+npm run dev
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Run tests
+npm run test
 
-## What technologies are used for this project?
+# Run tests in watch mode
+npm run test:watch
 
-This project is built with:
+# Lint code
+npm run lint
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Build for production
+npm run build
 
-## How can I deploy this project?
+# Preview production build
+npm run preview
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Project Structure
 
-## Can I connect a custom domain to my Lovable project?
+```
+src/
+├── components/
+│   ├── ui/              # shadcn/ui component library
+│   ├── layout/          # Header and sidebar components
+│   ├── screens/         # Workflow screen components
+│   ├── modals/          # Modal dialogs
+│   └── patient/         # Patient management components
+├── pages/               # Main application pages
+├── hooks/               # Custom React hooks
+├── types/               # TypeScript type definitions
+└── lib/                 # Utility functions
+```
 
-Yes, you can!
+## License
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Proprietary - All rights reserved
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Medical Device Notice
+
+This software is intended for research and decision support purposes only. It is not intended to replace professional medical judgment or diagnosis by healthcare professionals.
