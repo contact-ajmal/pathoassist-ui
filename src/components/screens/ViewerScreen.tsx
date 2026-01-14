@@ -1,15 +1,40 @@
-import { ZoomIn, ZoomOut, Move, RotateCcw, Layers, Info } from 'lucide-react';
+import { ZoomIn, ZoomOut, Move, RotateCcw, Layers, Info, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useState } from 'react';
+import { useCase } from '@/contexts/CaseContext';
 
 interface ViewerScreenProps {
   onProceed: () => void;
 }
 
+function formatDimensions(dims: [number, number] | undefined): string {
+  if (!dims) return 'N/A';
+  return `${dims[0].toLocaleString()} x ${dims[1].toLocaleString()} px`;
+}
+
+function formatFileSize(bytes: number | undefined): string {
+  if (!bytes) return 'N/A';
+  if (bytes >= 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  }
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+  return `${(bytes / 1024).toFixed(2)} KB`;
+}
+
 export function ViewerScreen({ onProceed }: ViewerScreenProps) {
   const [zoom, setZoom] = useState([25]);
+  const { metadata, processingResult, filename } = useCase();
+
+  const tissuePatches = processingResult?.tissue_patches ?? 0;
+  const totalPatches = processingResult?.total_patches ?? 0;
+  const tissueCoverage = totalPatches > 0
+    ? Math.round((tissuePatches / totalPatches) * 100)
+    : 0;
 
   return (
     <div className="h-full flex animate-fade-in">
@@ -53,7 +78,7 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
               <span className="font-mono text-xs w-12">{zoom[0]}%</span>
             </div>
             <div className="px-2 py-1 bg-muted rounded text-xs font-mono">
-              40x
+              {metadata?.magnification ? `${metadata.magnification}x` : '40x'}
             </div>
           </div>
         </div>
@@ -66,7 +91,9 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
               <div className="w-64 h-48 mx-auto mb-4 bg-gradient-to-br from-pink-200/50 via-purple-100/50 to-pink-100/50 rounded-lg border-2 border-dashed border-primary/20 flex items-center justify-center">
                 <div className="text-sm text-muted-foreground">
                   <p className="font-medium">Whole Slide Image Viewer</p>
-                  <p className="text-xs mt-1">specimen_lung_biopsy_001.svs</p>
+                  <p className="text-xs mt-1 truncate max-w-[200px]">
+                    {filename || metadata?.filename || 'No slide loaded'}
+                  </p>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -84,7 +111,7 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
 
           {/* Coordinates */}
           <div className="absolute bottom-4 left-4 px-3 py-1.5 bg-card/90 backdrop-blur rounded border text-xs font-mono">
-            X: 24,512 | Y: 16,384
+            X: 0 | Y: 0
           </div>
         </div>
       </div>
@@ -96,6 +123,15 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
         </div>
 
         <div className="flex-1 overflow-auto p-4 space-y-4">
+          {!processingResult && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Slide data is loading or unavailable.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Tissue Stats */}
           <Card>
             <CardHeader className="pb-2">
@@ -108,19 +144,26 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-muted-foreground">Tissue Coverage</span>
-                  <span className="font-medium">78%</span>
+                  <span className="font-medium">{tissueCoverage}%</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full w-[78%] bg-primary rounded-full" />
+                  <div
+                    className="h-full bg-primary rounded-full transition-all"
+                    style={{ width: `${tissueCoverage}%` }}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <div className="text-center p-2 bg-muted rounded">
-                  <p className="text-lg font-semibold text-foreground">12</p>
-                  <p className="text-xs text-muted-foreground">Tissue Regions</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {tissuePatches}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Tissue Patches</p>
                 </div>
                 <div className="text-center p-2 bg-muted rounded">
-                  <p className="text-lg font-semibold text-foreground">847</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {totalPatches}
+                  </p>
                   <p className="text-xs text-muted-foreground">Total Patches</p>
                 </div>
               </div>
@@ -134,16 +177,18 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Focus Score</span>
-                <span className="font-medium text-success">Excellent</span>
+                <span className="text-muted-foreground">Processing Time</span>
+                <span className="font-medium">
+                  {processingResult?.processing_time
+                    ? `${processingResult.processing_time.toFixed(2)}s`
+                    : 'N/A'}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Staining Quality</span>
-                <span className="font-medium text-success">Good</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Artifacts</span>
-                <span className="font-medium text-warning">Minimal</span>
+                <span className="text-muted-foreground">Background Patches</span>
+                <span className="font-medium">
+                  {processingResult?.background_patches ?? 'N/A'}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -155,24 +200,46 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Format</span>
-                <span className="font-mono text-xs">Aperio SVS</span>
+                <span className="text-muted-foreground">Dimensions</span>
+                <span className="font-mono text-xs">
+                  {formatDimensions(metadata?.dimensions)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">File Size</span>
+                <span className="font-mono text-xs">
+                  {formatFileSize(metadata?.file_size)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Levels</span>
-                <span>4</span>
+                <span>{metadata?.level_count ?? 'N/A'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Base MPP</span>
-                <span className="font-mono text-xs">0.2500</span>
+                <span className="text-muted-foreground">Resolution</span>
+                <span className="font-mono text-xs">
+                  {metadata?.resolution
+                    ? `${metadata.resolution.toFixed(4)} μm/px`
+                    : 'N/A'}
+                </span>
               </div>
+              {metadata?.vendor && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Vendor</span>
+                  <span className="font-mono text-xs">{metadata.vendor}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
         {/* Action */}
         <div className="p-4 border-t">
-          <Button className="w-full" onClick={onProceed}>
+          <Button
+            className="w-full"
+            onClick={onProceed}
+            disabled={!processingResult}
+          >
             Proceed to ROI Selection
           </Button>
         </div>

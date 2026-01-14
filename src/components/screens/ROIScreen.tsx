@@ -1,49 +1,156 @@
-import { useState } from 'react';
-import { Filter, Grid3X3, Check, Square, CheckSquare } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Filter, Grid3X3, Check, Square, CheckSquare, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { ROIPatch } from '@/types/workflow';
+import { useCase } from '@/contexts/CaseContext';
+import { confirmROISelection } from '@/lib/api';
+import type { PatchInfo } from '@/types/api';
 
 interface ROIScreenProps {
   onProceed: () => void;
 }
 
-const mockPatches: ROIPatch[] = [
-  { id: 'P001', magnification: '40x', coordinates: { x: 1024, y: 512 }, selected: true, type: 'tumor' },
-  { id: 'P002', magnification: '40x', coordinates: { x: 2048, y: 512 }, selected: true, type: 'tumor' },
-  { id: 'P003', magnification: '40x', coordinates: { x: 3072, y: 512 }, selected: false, type: 'inflammatory' },
-  { id: 'P004', magnification: '40x', coordinates: { x: 1024, y: 1024 }, selected: true, type: 'tumor' },
-  { id: 'P005', magnification: '40x', coordinates: { x: 2048, y: 1024 }, selected: false, type: 'normal' },
-  { id: 'P006', magnification: '40x', coordinates: { x: 3072, y: 1024 }, selected: true, type: 'inflammatory' },
-  { id: 'P007', magnification: '40x', coordinates: { x: 1024, y: 1536 }, selected: false, type: 'normal' },
-  { id: 'P008', magnification: '40x', coordinates: { x: 2048, y: 1536 }, selected: true, type: 'tumor' },
-  { id: 'P009', magnification: '40x', coordinates: { x: 3072, y: 1536 }, selected: false, type: 'inflammatory' },
-];
+interface DisplayPatch extends PatchInfo {
+  selected: boolean;
+  patchType: 'high_variance' | 'medium_variance' | 'low_variance';
+}
+
+function getPatchType(patch: PatchInfo): DisplayPatch['patchType'] {
+  if (patch.variance_score >= 0.7) return 'high_variance';
+  if (patch.variance_score >= 0.4) return 'medium_variance';
+  return 'low_variance';
+}
+
+function getTypeColor(type: DisplayPatch['patchType']) {
+  switch (type) {
+    case 'high_variance':
+      return 'bg-destructive/10 text-destructive border-destructive/30';
+    case 'medium_variance':
+      return 'bg-warning/10 text-warning border-warning/30';
+    case 'low_variance':
+      return 'bg-success/10 text-success border-success/30';
+  }
+}
+
+function getTypeLabel(type: DisplayPatch['patchType']) {
+  switch (type) {
+    case 'high_variance':
+      return 'High Interest';
+    case 'medium_variance':
+      return 'Medium';
+    case 'low_variance':
+      return 'Low';
+  }
+}
 
 export function ROIScreen({ onProceed }: ROIScreenProps) {
-  const [patches, setPatches] = useState<ROIPatch[]>(mockPatches);
+  const { caseId, processingResult, setRoiResult } = useCase();
+  const [patches, setPatches] = useState<DisplayPatch[]>([]);
   const [autoSelect, setAutoSelect] = useState(true);
-  const [filterTumor, setFilterTumor] = useState(true);
-  const [filterInflammatory, setFilterInflammatory] = useState(true);
+  const [filterHighVariance, setFilterHighVariance] = useState(true);
+  const [filterMediumVariance, setFilterMediumVariance] = useState(true);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const togglePatch = (id: string) => {
-    setPatches(patches.map(p => 
-      p.id === id ? { ...p, selected: !p.selected } : p
-    ));
+  // Initialize patches from processing result
+  useEffect(() => {
+    if (processingResult?.patches) {
+      // Filter to only tissue patches and sort by variance score
+      const tissuePatches = processingResult.patches
+        .filter((p) => !p.is_background)
+        .sort((a, b) => b.variance_score - a.variance_score)
+        .slice(0, 100) // Limit to top 100 for display
+        .map((patch) => ({
+          ...patch,
+          selected: patch.variance_score >= 0.5, // Auto-select high variance patches
+          patchType: getPatchType(patch),
+        }));
+      setPatches(tissuePatches);
+    }
+  }, [processingResult]);
+
+  const togglePatch = (patchId: string) => {
+    setPatches((prev) =>
+      prev.map((p) =>
+        p.patch_id === patchId ? { ...p, selected: !p.selected } : p
+      )
+    );
   };
 
-  const selectedCount = patches.filter(p => p.selected).length;
+  const selectAll = () => {
+    setPatches((prev) => prev.map((p) => ({ ...p, selected: true })));
+  };
 
-  const getTypeColor = (type: ROIPatch['type']) => {
-    switch (type) {
-      case 'tumor': return 'bg-destructive/10 text-destructive border-destructive/30';
-      case 'inflammatory': return 'bg-warning/10 text-warning border-warning/30';
-      case 'normal': return 'bg-success/10 text-success border-success/30';
+  const deselectAll = () => {
+    setPatches((prev) => prev.map((p) => ({ ...p, selected: false })));
+  };
+
+  const handleAutoSelect = (checked: boolean) => {
+    setAutoSelect(checked);
+    if (checked) {
+      // Auto-select top patches by variance
+      setPatches((prev) =>
+        prev.map((p) => ({
+          ...p,
+          selected: p.variance_score >= 0.5,
+        }))
+      );
     }
   };
+
+  const handleConfirmROI = async () => {
+    if (!caseId) {
+      setError('No case ID available');
+      return;
+    }
+
+    const selectedPatchIds = patches.filter((p) => p.selected).map((p) => p.patch_id);
+
+    if (selectedPatchIds.length === 0) {
+      setError('Please select at least one patch');
+      return;
+    }
+
+    setIsConfirming(true);
+    setError(null);
+
+    try {
+      const result = await confirmROISelection({
+        case_id: caseId,
+        selected_patch_ids: selectedPatchIds,
+        auto_select: autoSelect,
+        top_k: 50,
+      });
+
+      setRoiResult(result);
+      onProceed();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to confirm ROI selection');
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  const filteredPatches = patches.filter((patch) => {
+    if (patch.patchType === 'high_variance' && !filterHighVariance) return false;
+    if (patch.patchType === 'medium_variance' && !filterMediumVariance) return false;
+    return true;
+  });
+
+  const selectedCount = patches.filter((p) => p.selected).length;
+  const highVarianceSelected = patches.filter(
+    (p) => p.selected && p.patchType === 'high_variance'
+  ).length;
+  const mediumVarianceSelected = patches.filter(
+    (p) => p.selected && p.patchType === 'medium_variance'
+  ).length;
+  const lowVarianceSelected = patches.filter(
+    (p) => p.selected && p.patchType === 'low_variance'
+  ).length;
 
   return (
     <div className="h-full flex animate-fade-in">
@@ -58,6 +165,12 @@ export function ROIScreen({ onProceed }: ROIScreenProps) {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" onClick={selectAll}>
+              Select All
+            </Button>
+            <Button variant="outline" size="sm" onClick={deselectAll}>
+              Clear
+            </Button>
             <div className="flex items-center gap-2">
               <Grid3X3 className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm">
@@ -68,48 +181,77 @@ export function ROIScreen({ onProceed }: ROIScreenProps) {
           </div>
         </div>
 
+        {/* Error Alert */}
+        {error && (
+          <div className="p-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          </div>
+        )}
+
         {/* Patches Grid */}
         <div className="flex-1 overflow-auto p-6">
-          <div className="grid grid-cols-3 gap-4 max-w-4xl">
-            {patches.map((patch) => (
-              <div
-                key={patch.id}
-                onClick={() => togglePatch(patch.id)}
-                className={cn(
-                  'patch-card cursor-pointer',
-                  patch.selected && 'patch-card-selected'
-                )}
-              >
-                {/* Patch Image Placeholder */}
-                <div className="aspect-square bg-gradient-to-br from-pink-100 via-purple-50 to-blue-50 relative">
-                  {/* Selection checkbox */}
-                  <div className="absolute top-2 right-2">
-                    {patch.selected ? (
-                      <CheckSquare className="w-5 h-5 text-primary" />
-                    ) : (
-                      <Square className="w-5 h-5 text-muted-foreground" />
-                    )}
+          {filteredPatches.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              {patches.length === 0
+                ? 'No tissue patches available'
+                : 'No patches match the current filter'}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {filteredPatches.map((patch) => (
+                <div
+                  key={patch.patch_id}
+                  onClick={() => togglePatch(patch.patch_id)}
+                  className={cn(
+                    'patch-card cursor-pointer',
+                    patch.selected && 'patch-card-selected'
+                  )}
+                >
+                  {/* Patch Image Placeholder */}
+                  <div className="aspect-square bg-gradient-to-br from-pink-100 via-purple-50 to-blue-50 relative">
+                    {/* Selection checkbox */}
+                    <div className="absolute top-2 right-2">
+                      {patch.selected ? (
+                        <CheckSquare className="w-5 h-5 text-primary" />
+                      ) : (
+                        <Square className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    {/* Type badge */}
+                    <div className="absolute bottom-2 left-2">
+                      <Badge
+                        variant="outline"
+                        className={cn('text-xs', getTypeColor(patch.patchType))}
+                      >
+                        {getTypeLabel(patch.patchType)}
+                      </Badge>
+                    </div>
+                    {/* Variance score */}
+                    <div className="absolute bottom-2 right-2 text-xs font-mono bg-black/50 text-white px-1 rounded">
+                      {(patch.variance_score * 100).toFixed(0)}%
+                    </div>
                   </div>
-                  {/* Type badge */}
-                  <div className="absolute bottom-2 left-2">
-                    <Badge variant="outline" className={cn('text-xs capitalize', getTypeColor(patch.type))}>
-                      {patch.type}
-                    </Badge>
+                  {/* Patch Info */}
+                  <div className="p-3 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-medium truncate">
+                        {patch.patch_id.split('_').slice(-3).join('_')}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {patch.magnification}x
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      ({patch.x}, {patch.y})
+                    </p>
                   </div>
                 </div>
-                {/* Patch Info */}
-                <div className="p-3 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm font-medium">{patch.id}</span>
-                    <span className="text-xs text-muted-foreground">{patch.magnification}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    ({patch.coordinates.x}, {patch.coordinates.y})
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -129,9 +271,9 @@ export function ROIScreen({ onProceed }: ROIScreenProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Auto-select ROIs</p>
-                  <p className="text-xs text-muted-foreground">AI-suggested regions</p>
+                  <p className="text-xs text-muted-foreground">High-variance regions</p>
                 </div>
-                <Switch checked={autoSelect} onCheckedChange={setAutoSelect} />
+                <Switch checked={autoSelect} onCheckedChange={handleAutoSelect} />
               </div>
             </CardContent>
           </Card>
@@ -148,16 +290,22 @@ export function ROIScreen({ onProceed }: ROIScreenProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-destructive/30" />
-                  <span className="text-sm">Tumor-like</span>
+                  <span className="text-sm">High Interest</span>
                 </div>
-                <Switch checked={filterTumor} onCheckedChange={setFilterTumor} />
+                <Switch
+                  checked={filterHighVariance}
+                  onCheckedChange={setFilterHighVariance}
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-warning/30" />
-                  <span className="text-sm">Inflammatory</span>
+                  <span className="text-sm">Medium</span>
                 </div>
-                <Switch checked={filterInflammatory} onCheckedChange={setFilterInflammatory} />
+                <Switch
+                  checked={filterMediumVariance}
+                  onCheckedChange={setFilterMediumVariance}
+                />
               </div>
             </CardContent>
           </Card>
@@ -170,16 +318,16 @@ export function ROIScreen({ onProceed }: ROIScreenProps) {
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tumor regions</span>
-                  <span className="font-medium">{patches.filter(p => p.selected && p.type === 'tumor').length}</span>
+                  <span className="text-muted-foreground">High Interest</span>
+                  <span className="font-medium">{highVarianceSelected}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Inflammatory</span>
-                  <span className="font-medium">{patches.filter(p => p.selected && p.type === 'inflammatory').length}</span>
+                  <span className="text-muted-foreground">Medium</span>
+                  <span className="font-medium">{mediumVarianceSelected}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Normal tissue</span>
-                  <span className="font-medium">{patches.filter(p => p.selected && p.type === 'normal').length}</span>
+                  <span className="text-muted-foreground">Low</span>
+                  <span className="font-medium">{lowVarianceSelected}</span>
                 </div>
                 <div className="h-px bg-border my-2" />
                 <div className="flex justify-between font-medium">
@@ -193,13 +341,22 @@ export function ROIScreen({ onProceed }: ROIScreenProps) {
 
         {/* Action */}
         <div className="p-4 border-t">
-          <Button 
-            className="w-full" 
-            onClick={onProceed}
-            disabled={selectedCount === 0}
+          <Button
+            className="w-full"
+            onClick={handleConfirmROI}
+            disabled={selectedCount === 0 || isConfirming}
           >
-            <Check className="w-4 h-4 mr-2" />
-            Confirm ROIs & Analyze
+            {isConfirming ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Confirming...
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4 mr-2" />
+                Confirm ROIs & Analyze
+              </>
+            )}
           </Button>
         </div>
       </div>
