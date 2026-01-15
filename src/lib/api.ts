@@ -26,6 +26,13 @@ export function getThumbnailUrl(caseId: string): string {
   return `${API_BASE_URL}/thumbnail/${caseId}`;
 }
 
+/**
+ * Get patch thumbnail URL
+ */
+export function getPatchThumbnailUrl(caseId: string, patchId: string): string {
+  return `${API_BASE_URL}/patches/${caseId}/${patchId}/thumbnail`;
+}
+
 class ApiError extends Error {
   constructor(
     public status: number,

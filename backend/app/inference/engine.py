@@ -1,10 +1,13 @@
 """
 AI inference engine using MedGemma for pathology analysis.
+Now with multimodal vision-language capabilities.
 """
 import time
 import torch
+from pathlib import Path
 from typing import Optional, List
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from PIL import Image
+from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig
 
 from ..config import settings
 from ..models import (
@@ -22,16 +25,17 @@ logger = get_logger(__name__)
 
 
 class InferenceEngine:
-    """AI inference engine for pathology analysis using MedGemma."""
+    """AI inference engine for pathology analysis using MedGemma with vision capabilities."""
 
     def __init__(self):
         """Initialize inference engine."""
         self.model_name = settings.MODEL_NAME
         self.device = self._detect_device()
         self.model = None
-        self.tokenizer = None
+        self.processor = None
         self.prompt_builder = PromptBuilder()
         self.is_loaded = False
+        self.is_multimodal = False  # Track if model supports vision
 
         logger.info(f"Inference engine initialized (device: {self.device})")
 
@@ -52,7 +56,7 @@ class InferenceEngine:
 
     def load_model(self) -> bool:
         """
-        Load MedGemma model and tokenizer.
+        Load MedGemma model and processor for multimodal inference.
 
         Returns:
             True if successful
@@ -64,30 +68,49 @@ class InferenceEngine:
         try:
             logger.info(f"Loading model: {self.model_name}")
 
-            # Configure quantization if enabled
-            if settings.USE_QUANTIZATION and self.device == "cuda":
-                quantization_config = BitsAndBytesConfig(
-                    load_in_8bit=True,
-                    llm_int8_threshold=6.0,
-                )
-                logger.info("Using 8-bit quantization")
+            # Determine dtype based on device
+            if self.device == "cuda":
+                torch_dtype = torch.bfloat16
+            elif self.device == "mps":
+                torch_dtype = torch.float16  # MPS works better with float16
             else:
-                quantization_config = None
+                torch_dtype = torch.float32
 
-            # Load tokenizer
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_name,
-                trust_remote_code=True,
-            )
+            # Try loading as multimodal vision-language model first
+            try:
+                self.processor = AutoProcessor.from_pretrained(
+                    self.model_name,
+                    trust_remote_code=True,
+                )
 
-            # Load model
-            self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_name,
-                quantization_config=quantization_config,
-                device_map="auto" if self.device != "cpu" else None,
-                trust_remote_code=True,
-                torch_dtype=torch.float16 if self.device != "cpu" else torch.float32,
-            )
+                self.model = AutoModelForImageTextToText.from_pretrained(
+                    self.model_name,
+                    device_map="auto" if self.device != "cpu" else None,
+                    trust_remote_code=True,
+                    torch_dtype=torch_dtype,
+                )
+                self.is_multimodal = True
+                logger.info("Loaded as multimodal vision-language model")
+
+            except Exception as e:
+                # Fallback to text-only model
+                logger.warning(f"Could not load as multimodal model: {e}")
+                logger.info("Falling back to text-only model")
+                
+                from transformers import AutoTokenizer, AutoModelForCausalLM
+                
+                self.processor = AutoTokenizer.from_pretrained(
+                    self.model_name,
+                    trust_remote_code=True,
+                )
+                
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    self.model_name,
+                    device_map="auto" if self.device != "cpu" else None,
+                    trust_remote_code=True,
+                    torch_dtype=torch_dtype,
+                )
+                self.is_multimodal = False
 
             if self.device == "cpu":
                 self.model = self.model.to(self.device)
@@ -95,7 +118,8 @@ class InferenceEngine:
             self.model.eval()
             self.is_loaded = True
 
-            logger.info(f"✓ Model loaded successfully on {self.device}")
+            mode = "multimodal" if self.is_multimodal else "text-only"
+            logger.info(f"✓ Model loaded successfully on {self.device} ({mode})")
             return True
 
         except Exception as e:
@@ -103,63 +127,227 @@ class InferenceEngine:
             self.is_loaded = False
             return False
 
-    def generate_text(
+    def _load_patch_image(self, case_id: str, patch: PatchInfo) -> Optional[Image.Image]:
+        """
+        Load a patch image from the slide for the given patch info.
+        
+        Args:
+            case_id: Case identifier
+            patch: Patch information
+            
+        Returns:
+            PIL Image of the patch or None if not available
+        """
+        try:
+            # Try to load from cached patch images first
+            patch_dir = settings.CASES_DIR / case_id / "patches"
+            patch_file = patch_dir / f"{patch.patch_id}.png"
+            
+            if patch_file.exists():
+                return Image.open(patch_file).convert("RGB")
+            
+            # If no cached patch, extract from the original slide
+            # Find slide file in case directory
+            case_dir = settings.CASES_DIR / case_id
+            
+            # Look for common slide formats
+            slide_extensions = ['.svs', '.tiff', '.ndpi', '.mrxs', '.tif']
+            slide_files = [
+                f for f in case_dir.iterdir() 
+                if f.suffix.lower() in slide_extensions
+            ]
+            
+            if not slide_files:
+                logger.warning(f"No slide file found for case {case_id}")
+                return None
+                
+            # Import openslide to extract patch
+            try:
+                import openslide
+                slide_path = slide_files[0]
+                slide = openslide.OpenSlide(str(slide_path))
+                
+                # Extract patch region
+                patch_size = settings.PATCH_SIZE
+                region = slide.read_region(
+                    (patch.x, patch.y),
+                    patch.level,
+                    (patch_size, patch_size)
+                ).convert("RGB")
+                
+                slide.close()
+                
+                # Cache the patch for future use
+                patch_dir.mkdir(parents=True, exist_ok=True)
+                region.save(patch_file)
+                
+                return region
+                
+            except Exception as e:
+                logger.warning(f"Could not extract patch {patch.patch_id}: {e}")
+                return None
+                
+        except Exception as e:
+            logger.warning(f"Error loading patch image: {e}")
+            return None
+
+    def _analyze_with_images(
         self,
-        prompt: str,
-        max_tokens: int = None,
-        temperature: float = None,
+        case_id: str,
+        patches: List[PatchInfo],
+        clinical_context: Optional[str] = None,
     ) -> str:
         """
-        Generate text using the model.
-
-        Args:
-            prompt: Input prompt
-            max_tokens: Maximum tokens to generate
-            temperature: Sampling temperature
-
-        Returns:
-            Generated text
-        """
-        if not self.is_loaded:
-            raise RuntimeError("Model not loaded. Call load_model() first.")
-
-        max_tokens = max_tokens or settings.MAX_TOKENS
-        temperature = temperature or settings.TEMPERATURE
+        Analyze patches using multimodal vision-language model.
         
-        # Ensure temperature is not too low to avoid numerical issues
-        temperature = max(temperature, 0.1)
+        Args:
+            case_id: Case identifier
+            patches: List of patch information
+            clinical_context: Optional clinical context
+            
+        Returns:
+            Generated analysis text
+        """
+        # Load a sample of patch images (limit to avoid memory issues)
+        max_images = 1  # Reduce to 1 image to ensure stability
+        patch_images = []
+        
+        for patch in patches[:max_images * 2]:  # Try more patches in case some fail
+            img = self._load_patch_image(case_id, patch)
+            if img:
+                # Resize to reasonable size for model input
+                img = img.resize((224, 224), Image.Resampling.LANCZOS)
+                patch_images.append(img)
+                if len(patch_images) >= max_images:
+                    break
+        
+        # Build system message
+        system_text = """You are an expert pathologist analyzing histopathology tissue samples.
+Provide a structured analysis including:
+1. Tissue type identification
+2. Cellular observations (cellularity, nuclear features)
+3. Any abnormalities or notable features
+4. Confidence assessment
 
-        # Tokenize input
-        inputs = self.tokenizer(prompt, return_tensors="pt")
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+Use appropriate medical terminology. Express uncertainty where warranted.
+Format your response with clear sections: TISSUE TYPE, FINDINGS, SUMMARY."""
 
-        # Generate with error handling
+        # Build user message with images
+        if self.is_multimodal and patch_images:
+            # Build message with {"type": "image"} entries - processor handles token insertion
+            user_content = []
+            for _ in patch_images:
+                user_content.append({"type": "image"})  # Just marker, no actual image data here
+            user_content.append({"type": "text", "text": "Analyze these pathology tissue patches."})
+        else:
+            user_content = [{"type": "text", "text": f"Analyze these {len(patch_images)} tissue sample patches from a pathology slide:"}]
+        
+        # Add clinical context if provided
+        if clinical_context:
+            user_content.append({"type": "text", "text": f"\nClinical context: {clinical_context}"})
+        
+        user_content.append({
+            "type": "text", 
+            "text": "\n\nProvide your pathology analysis with TISSUE TYPE, FINDINGS (numbered list), and SUMMARY sections."
+        })
+
+        messages = [
+            {"role": "system", "content": [{"type": "text", "text": system_text}]},
+            {"role": "user", "content": user_content}
+        ]
+
+        # Prepare inputs - apply_chat_template handles token insertion for {"type": "image"}
+        text = self.processor.apply_chat_template(messages, add_generation_prompt=True)
+        logger.info(f"Input prompt text (first 200 chars): {text[:200]}...")
+        
+        # Now tokenize + process with images
+        inputs = self.processor(
+            text=text,
+            images=patch_images if self.is_multimodal and patch_images else None,
+            return_tensors="pt",
+            padding=True
+        ).to(self.device)
+        if self.device == "mps":
+            inputs = {k: v.to(self.device, dtype=torch.float16) if v.dtype == torch.bfloat16 else v.to(self.device) for k, v in inputs.items()}
+        else:
+            inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+        
+        input_len = inputs["input_ids"].shape[-1]
+
+        # Generate with error handling and retry
         try:
-            with torch.no_grad():
-                outputs = self.model.generate(
+            with torch.inference_mode():
+                generation = self.model.generate(
                     **inputs,
-                    max_new_tokens=max_tokens,
-                    temperature=temperature,
-                    top_p=settings.TOP_P,
-                    do_sample=temperature > 0.1,  # Disable sampling if temp too low
-                    pad_token_id=self.tokenizer.eos_token_id,
+                    max_new_tokens=settings.MAX_TOKENS,
+                    do_sample=True,
+                    temperature=0.7,
+                    top_p=0.9,
+                    pad_token_id=self.processor.tokenizer.eos_token_id if hasattr(self.processor, 'tokenizer') else 0,
                 )
         except RuntimeError as e:
-            if "probability tensor" in str(e) or "inf" in str(e) or "nan" in str(e):
-                # Retry with greedy decoding if sampling fails
-                logger.warning(f"Sampling failed, retrying with greedy decoding: {e}")
-                with torch.no_grad():
-                    outputs = self.model.generate(
+            if "probability tensor contains either `inf`, `nan`" in str(e):
+                logger.warning("Sampling failed due to numerical instability, retrying with greedy decoding...")
+                with torch.inference_mode():
+                    generation = self.model.generate(
                         **inputs,
-                        max_new_tokens=max_tokens,
-                        do_sample=False,
-                        pad_token_id=self.tokenizer.eos_token_id,
+                        max_new_tokens=settings.MAX_TOKENS,
+                        do_sample=False,  # Fallback to greedy
+                        pad_token_id=self.processor.tokenizer.eos_token_id if hasattr(self.processor, 'tokenizer') else 0,
                     )
             else:
-                raise
+                raise e
+        
+        generation = generation[0][input_len:]
+        decoded = self.processor.decode(generation, skip_special_tokens=True)
+        
+        logger.info(f"Raw generated text: {decoded}")
+
+        # Clean up images to free memory
+        for img in patch_images:
+            img.close()
+        
+        if self.device == "cuda":
+            torch.cuda.empty_cache()
+        
+        return decoded
+
+    def _analyze_text_only(
+        self,
+        patches: List[PatchInfo],
+        clinical_context: Optional[str] = None,
+    ) -> str:
+        """
+        Analyze patches using text-only model (fallback).
+        
+        Args:
+            patches: List of patch information
+            clinical_context: Optional clinical context
+            
+        Returns:
+            Generated analysis text
+        """
+        # Build prompt using existing prompt builder
+        prompt = self.prompt_builder.build_analysis_prompt(
+            patches=patches,
+            clinical_context=clinical_context,
+        )
+
+        # Tokenize input
+        inputs = self.processor(prompt, return_tensors="pt")
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+        # Generate
+        with torch.no_grad():
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=settings.MAX_TOKENS,
+                do_sample=False,
+                pad_token_id=self.processor.eos_token_id,
+            )
 
         # Decode output
-        generated_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        generated_text = self.processor.decode(outputs[0], skip_special_tokens=True)
 
         # Extract only the generated part (remove prompt)
         if generated_text.startswith(prompt):
@@ -191,15 +379,19 @@ class InferenceEngine:
 
         logger.info(f"Analyzing {len(patches)} patches for case {case_id}")
 
-        # Build prompt
-        prompt = self.prompt_builder.build_analysis_prompt(
-            patches=patches,
-            clinical_context=clinical_context,
-        )
-
-        # Generate analysis
+        # Generate analysis using appropriate method
         try:
-            generated_text = self.generate_text(prompt)
+            if self.is_multimodal:
+                generated_text = self._analyze_with_images(
+                    case_id=case_id,
+                    patches=patches,
+                    clinical_context=clinical_context,
+                )
+            else:
+                generated_text = self._analyze_text_only(
+                    patches=patches,
+                    clinical_context=clinical_context,
+                )
 
             # Check safety
             is_safe, violations = self.prompt_builder.check_safety(generated_text)
@@ -276,21 +468,22 @@ class InferenceEngine:
                 model_name=self.model_name,
                 input_data={
                     "num_patches": len(patches),
-                    "clinical_context": bool(clinical_context),
+                    "clinical_context": clinical_context,
+                    "mode": "multimodal" if self.is_multimodal else "text-only"
                 },
                 output_data={
-                    "num_findings": len(findings),
-                    "tissue_type": tissue_type.value,
+                    "findings": [f.dict() for f in findings],
+                    "tissue_type": str(tissue_type),
+                    "summary": narrative
                 },
                 confidence=overall_confidence,
                 processing_time=processing_time,
-                warnings=warnings,
+                warnings=warnings
             )
 
             logger.info(
                 f"Analysis complete for case {case_id}: "
-                f"{len(findings)} findings, "
-                f"confidence {overall_confidence:.2f}, "
+                f"{len(findings)} findings, confidence {overall_confidence:.2f}, "
                 f"time {processing_time:.2f}s"
             )
 
@@ -308,67 +501,58 @@ class InferenceEngine:
             tissue_str: Tissue type string
 
         Returns:
-            TissueType enum
+            TissueType enum value
         """
         tissue_str = tissue_str.lower()
 
-        if "epithelial" in tissue_str:
-            return TissueType.EPITHELIAL
-        elif "connective" in tissue_str or "stromal" in tissue_str:
-            return TissueType.CONNECTIVE
-        elif "muscle" in tissue_str:
-            return TissueType.MUSCLE
-        elif "nervous" in tissue_str or "neural" in tissue_str:
-            return TissueType.NERVOUS
-        elif "blood" in tissue_str or "hematopoietic" in tissue_str:
-            return TissueType.BLOOD
-        elif "mixed" in tissue_str:
-            return TissueType.MIXED
-        else:
-            return TissueType.UNKNOWN
+        tissue_mapping = {
+            "epithelial": TissueType.EPITHELIAL,
+            "connective": TissueType.CONNECTIVE,
+            "muscle": TissueType.MUSCLE,
+            "nervous": TissueType.NERVOUS,
+            "blood": TissueType.BLOOD,
+            "mixed": TissueType.MIXED,
+        }
 
-    def generate_summary(self, findings: List[PathologyFinding]) -> str:
-        """
-        Generate a narrative summary from findings.
+        for key, value in tissue_mapping.items():
+            if key in tissue_str:
+                return value
 
-        Args:
-            findings: List of findings
-
-        Returns:
-            Narrative summary
-        """
-        if not findings:
-            return "No significant findings to report."
-
-        # Build observations string
-        observations = "\n".join([
-            f"- {finding.finding} (Confidence: {finding.confidence.value})"
-            for finding in findings
-        ])
-
-        prompt = self.prompt_builder.build_description_prompt(observations)
-
-        try:
-            summary = self.generate_text(prompt, max_tokens=500)
-            summary = self.prompt_builder.add_disclaimer(summary)
-            return summary
-        except Exception as e:
-            logger.error(f"Failed to generate summary: {e}")
-            return "Unable to generate summary. Please review individual findings."
+        return TissueType.UNKNOWN
 
     def unload_model(self):
-        """Unload model from memory."""
-        if self.model is not None:
+        """Unload model to free resources."""
+        if self.model:
             del self.model
             self.model = None
-
-        if self.tokenizer is not None:
-            del self.tokenizer
-            self.tokenizer = None
-
-        # Clear CUDA cache if using GPU
-        if torch.cuda.is_available():
+        
+        if self.processor:
+            del self.processor
+            self.processor = None
+            
+        if self.device == "cuda":
             torch.cuda.empty_cache()
-
+        elif self.device == "mps":
+            torch.mps.empty_cache()
+            
         self.is_loaded = False
-        logger.info("Model unloaded from memory")
+        logger.info("Model unloaded")
+
+
+# Global inference engine instance
+_inference_engine: Optional[InferenceEngine] = None
+
+
+def get_inference_engine() -> InferenceEngine:
+    """
+    Get or create the global inference engine instance.
+
+    Returns:
+        InferenceEngine instance
+    """
+    global _inference_engine
+
+    if _inference_engine is None:
+        _inference_engine = InferenceEngine()
+
+    return _inference_engine

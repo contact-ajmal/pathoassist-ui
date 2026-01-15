@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useCase } from '@/contexts/CaseContext';
-import { confirmROISelection } from '@/lib/api';
+import { confirmROISelection, getPatchThumbnailUrl } from '@/lib/api';
 import type { PatchInfo } from '@/types/api';
 
 interface ROIScreenProps {
@@ -210,27 +210,34 @@ export function ROIScreen({ onProceed }: ROIScreenProps) {
                     patch.selected && 'patch-card-selected'
                   )}
                 >
-                  {/* Patch Image Placeholder */}
-                  <div className="aspect-square bg-gradient-to-br from-pink-100 via-purple-50 to-blue-50 relative">
+                  {/* Patch Image */}
+                  <div className="aspect-square bg-muted relative overflow-hidden group">
+                    <img
+                      src={getPatchThumbnailUrl(caseId!, patch.patch_id)}
+                      alt={`Patch ${patch.patch_id}`}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+
                     {/* Selection checkbox */}
                     <div className="absolute top-2 right-2">
                       {patch.selected ? (
-                        <CheckSquare className="w-5 h-5 text-primary" />
+                        <CheckSquare className="w-5 h-5 text-primary bg-background/80 rounded" />
                       ) : (
-                        <Square className="w-5 h-5 text-muted-foreground" />
+                        <Square className="w-5 h-5 text-white/50 bg-black/20 rounded" />
                       )}
                     </div>
                     {/* Type badge */}
                     <div className="absolute bottom-2 left-2">
                       <Badge
-                        variant="outline"
-                        className={cn('text-xs', getTypeColor(patch.patchType))}
+                        variant="secondary"
+                        className={cn('text-xs opacity-90', getTypeColor(patch.patchType))}
                       >
                         {getTypeLabel(patch.patchType)}
                       </Badge>
                     </div>
                     {/* Variance score */}
-                    <div className="absolute bottom-2 right-2 text-xs font-mono bg-black/50 text-white px-1 rounded">
+                    <div className="absolute bottom-2 right-2 text-xs font-mono bg-black/60 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">
                       {(patch.variance_score * 100).toFixed(0)}%
                     </div>
                   </div>

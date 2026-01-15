@@ -288,7 +288,12 @@ class StorageManager:
 
         async with aiofiles.open(status_file, "r") as f:
             data = await f.read()
-            return json.loads(data)
+            try:
+                if not data.strip():
+                    return None
+                return json.loads(data)
+            except json.JSONDecodeError:
+                return None
 
     async def list_cases(self) -> List[Dict[str, Any]]:
         """

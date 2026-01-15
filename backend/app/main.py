@@ -330,6 +330,70 @@ async def get_patches(case_id: str):
     return result
 
 
+@app.get("/patches/{case_id}/{patch_id}/thumbnail")
+async def get_patch_thumbnail(case_id: str, patch_id: str):
+    """
+    Get thumbnail for a specific patch.
+    Generates on-the-fly if not cached.
+    """
+    # 1. Check cache
+    patch_dir = settings.CASES_DIR / case_id / "patches"
+    patch_file = patch_dir / f"{patch_id}.jpg"
+    
+    if patch_file.exists():
+        return FileResponse(patch_file, media_type="image/jpeg")
+        
+    # 2. Load context to generate
+    result = await storage_manager.load_processing_result(case_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Processing result not found")
+        
+    patch = next((p for p in result.patches if p.patch_id == patch_id), None)
+    if not patch:
+        raise HTTPException(status_code=404, detail="Patch not found")
+        
+    # Find slide file
+    slide_dir = settings.CASES_DIR / case_id
+    # Simple search for common formats
+    slide_files = [
+        f for f in slide_dir.iterdir() 
+        if f.suffix.lower() in ['.svs', '.tiff', '.ndpi', '.mrxs']
+    ]
+    
+    if not slide_files:
+        raise HTTPException(status_code=404, detail="Slide file not found")
+        
+    slide_path = slide_files[0]
+    
+    try:
+        from fastapi.concurrency import run_in_threadpool
+        
+        # Extract region (blocking)
+        region = await run_in_threadpool(
+            wsi_processor.get_slide_region,
+            slide_path=slide_path,
+            x=patch.x,
+            y=patch.y,
+            level=0, # Patches usually extracted at level 0 (highest res) or as specified in patch info?
+                     # Processor generates at specific level but patch.level might be 0.
+                     # WSIProcessor.process_slide uses magnification to determine level?
+                     # Let's assume level 0 for high res patch used for analysis
+            size=(settings.PATCH_SIZE, settings.PATCH_SIZE)
+        )
+        
+        # Resize if needed? No, 224x224 is standard.
+        
+        # Save to cache
+        patch_dir.mkdir(parents=True, exist_ok=True)
+        await run_in_threadpool(region.save, patch_file, "JPEG")
+        
+        return FileResponse(patch_file, media_type="image/jpeg")
+        
+    except Exception as e:
+        logger.error(f"Failed to generate patch thumbnail {patch_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ============================================================================
 # ROI SELECTION
 # ============================================================================
