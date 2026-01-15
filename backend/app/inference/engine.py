@@ -125,21 +125,38 @@ class InferenceEngine:
 
         max_tokens = max_tokens or settings.MAX_TOKENS
         temperature = temperature or settings.TEMPERATURE
+        
+        # Ensure temperature is not too low to avoid numerical issues
+        temperature = max(temperature, 0.1)
 
         # Tokenize input
         inputs = self.tokenizer(prompt, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-        # Generate
-        with torch.no_grad():
-            outputs = self.model.generate(
-                **inputs,
-                max_new_tokens=max_tokens,
-                temperature=temperature,
-                top_p=settings.TOP_P,
-                do_sample=True,
-                pad_token_id=self.tokenizer.eos_token_id,
-            )
+        # Generate with error handling
+        try:
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=settings.TOP_P,
+                    do_sample=temperature > 0.1,  # Disable sampling if temp too low
+                    pad_token_id=self.tokenizer.eos_token_id,
+                )
+        except RuntimeError as e:
+            if "probability tensor" in str(e) or "inf" in str(e) or "nan" in str(e):
+                # Retry with greedy decoding if sampling fails
+                logger.warning(f"Sampling failed, retrying with greedy decoding: {e}")
+                with torch.no_grad():
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=max_tokens,
+                        do_sample=False,
+                        pad_token_id=self.tokenizer.eos_token_id,
+                    )
+            else:
+                raise
 
         # Decode output
         generated_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -221,14 +238,15 @@ class InferenceEngine:
                 findings.append(finding)
 
             # Determine tissue type
-            tissue_type_str = parsed.get("tissue_type", "unknown").lower()
+            tissue_type_str = parsed.get("tissue_type") or "unknown"
+            tissue_type_str = tissue_type_str.lower() if isinstance(tissue_type_str, str) else "unknown"
             tissue_type = self._parse_tissue_type(tissue_type_str)
 
             # Get overall confidence
-            overall_confidence = parsed.get("confidence", 0.65)
+            overall_confidence = parsed.get("confidence") or 0.65
 
             # Get narrative summary
-            narrative = parsed.get("summary", generated_text[:500])
+            narrative = parsed.get("summary") or generated_text[:500] or "Analysis completed."
 
             # Add disclaimer
             narrative = self.prompt_builder.add_disclaimer(narrative)

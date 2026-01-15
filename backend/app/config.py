@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     ROI_DENSITY_WEIGHT: float = 0.4  # Weight for tissue density
 
     # AI Inference
-    MODEL_NAME: str = "google/medgemma-2b"  # Default MedGemma model
+    MODEL_NAME: str = "google/medgemma-1.5-4b-it"  # Specialized Medical Model
     USE_QUANTIZATION: bool = True  # Enable 8-bit quantization
     MAX_TOKENS: int = 1024
     TEMPERATURE: float = 0.7

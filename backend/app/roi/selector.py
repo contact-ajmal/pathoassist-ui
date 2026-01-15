@@ -61,12 +61,11 @@ class ROISelector:
             logger.warning("No tissue patches found for ROI selection")
             return []
 
-        # Calculate scores for all patches
-        scored_patches = []
-        for patch in tissue_patches:
-            score = self.calculate_patch_score(patch)
-            patch.score = score  # Add score to patch object (dynamic attribute)
-            scored_patches.append((score, patch))
+        # Calculate scores for all patches (store in tuple, don't mutate Pydantic model)
+        scored_patches = [
+            (self.calculate_patch_score(patch), patch)
+            for patch in tissue_patches
+        ]
 
         # Sort by score (descending)
         scored_patches.sort(key=lambda x: x[0], reverse=True)
@@ -125,7 +124,7 @@ class ROISelector:
             combined_patches = manual_patches + auto_patches
 
             result = ROIResult(
-                case_id=all_patches[0].patch_id.split("_")[0] if all_patches else "unknown",
+                case_id="_".join(all_patches[0].patch_id.split("_")[:2]) if all_patches else "unknown",
                 selected_patches=combined_patches,
                 auto_selected_count=len(auto_patches),
                 manual_override_count=len(manual_patches),
@@ -140,7 +139,7 @@ class ROISelector:
         else:
             # Manual selection only
             result = ROIResult(
-                case_id=all_patches[0].patch_id.split("_")[0] if all_patches else "unknown",
+                case_id="_".join(all_patches[0].patch_id.split("_")[:2]) if all_patches else "unknown",
                 selected_patches=manual_patches,
                 auto_selected_count=0,
                 manual_override_count=len(manual_patches),

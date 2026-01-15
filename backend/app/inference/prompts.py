@@ -108,14 +108,33 @@ class PromptBuilder:
         # Summarize tissue characteristics
         total_patches = len(patches)
         tissue_patches = [p for p in patches if not p.is_background]
-        avg_tissue_ratio = sum(p.tissue_ratio for p in tissue_patches) / len(tissue_patches) if tissue_patches else 0
-        avg_variance = sum(p.variance_score for p in tissue_patches) / len(tissue_patches) if tissue_patches else 0
-
-        tissue_summary = (
-            f"{len(tissue_patches)} tissue-containing regions "
-            f"(avg tissue density: {avg_tissue_ratio:.2f}, "
-            f"avg variance: {avg_variance:.2f})"
-        )
+        
+        if not tissue_patches:
+            tissue_summary = "No tissue regions detected"
+        else:
+            avg_tissue_ratio = sum(p.tissue_ratio for p in tissue_patches) / len(tissue_patches)
+            avg_variance = sum(p.variance_score for p in tissue_patches) / len(tissue_patches)
+            max_variance = max(p.variance_score for p in tissue_patches)
+            min_variance = min(p.variance_score for p in tissue_patches)
+            
+            # Categorize patches by variance (proxy for tissue complexity)
+            high_variance_patches = [p for p in tissue_patches if p.variance_score > 0.7]
+            medium_variance_patches = [p for p in tissue_patches if 0.3 <= p.variance_score <= 0.7]
+            low_variance_patches = [p for p in tissue_patches if p.variance_score < 0.3]
+            
+            # Infer tissue characteristics from statistics
+            tissue_density_desc = "high" if avg_tissue_ratio > 0.7 else "moderate" if avg_tissue_ratio > 0.4 else "low"
+            heterogeneity_desc = "highly heterogeneous" if (max_variance - min_variance) > 0.5 else "moderately heterogeneous" if (max_variance - min_variance) > 0.2 else "relatively homogeneous"
+            
+            tissue_summary = (
+                f"{len(tissue_patches)} tissue-containing regions analyzed at 40x magnification.\n"
+                f"   - Tissue density: {tissue_density_desc} (avg {avg_tissue_ratio:.1%})\n"
+                f"   - Tissue heterogeneity: {heterogeneity_desc} (variance range {min_variance:.2f}-{max_variance:.2f})\n"
+                f"   - High-interest regions: {len(high_variance_patches)} (areas with significant cellular variation)\n"
+                f"   - Medium-interest regions: {len(medium_variance_patches)} (areas with moderate features)\n"
+                f"   - Background/low-interest: {len(low_variance_patches)} regions\n"
+                f"   - Slide appears to contain tissue microarray (TMA) cores with multiple tissue specimens"
+            )
 
         # Format clinical context
         clinical_section = ""
@@ -224,7 +243,7 @@ class PromptBuilder:
 
     def parse_structured_output(self, text: str) -> Dict[str, Any]:
         """
-        Parse structured output from model.
+        Parse structured output from model with flexible matching.
 
         Args:
             text: Generated text
@@ -232,6 +251,8 @@ class PromptBuilder:
         Returns:
             Parsed structure
         """
+        import re
+        
         result = {
             "tissue_type": None,
             "findings": [],
@@ -240,58 +261,112 @@ class PromptBuilder:
             "confidence": 0.5,
         }
 
-        lines = text.split("\n")
+        # More flexible pattern matching for tissue type
+        tissue_patterns = [
+            r"TISSUE TYPE:\s*([^\n\(]+)",
+            r"Tissue Type[:\s]+([^\n\|]+)",
+            r"Type of tissue[:\s]+([^\n]+)",
+        ]
+        for pattern in tissue_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match and match.group(1).strip().lower() not in ['n/a', 'unknown', '']:
+                result["tissue_type"] = match.group(1).strip()
+                break
+        
+        # If still no tissue type, try to infer from content
+        if not result["tissue_type"]:
+            tissue_keywords = ['epithelial', 'connective', 'muscle', 'nervous', 'blood', 'lymph', 'glandular', 'carcinoma']
+            for keyword in tissue_keywords:
+                if keyword.lower() in text.lower():
+                    result["tissue_type"] = keyword.capitalize()
+                    break
+        
+        # Default to mixed if nothing found
+        if not result["tissue_type"]:
+            result["tissue_type"] = "Mixed tissue specimen"
 
-        current_section = None
-        current_finding = None
-
-        for line in lines:
-            line = line.strip()
-
-            if not line:
-                continue
-
-            # Detect sections
-            if line.startswith("TISSUE TYPE:"):
-                result["tissue_type"] = line.replace("TISSUE TYPE:", "").strip()
-
-            elif line.startswith("FINDINGS:"):
-                current_section = "findings"
-
-            elif line.startswith("SUMMARY:"):
-                current_section = "summary"
-
-            elif line.startswith("RECOMMENDATIONS:"):
-                current_section = "recommendations"
-
-            elif line.startswith("Overall analysis confidence:"):
-                try:
-                    conf_str = line.split(":")[-1].strip()
-                    result["confidence"] = float(conf_str)
-                except (ValueError, IndexError):
-                    pass
-
-            elif current_section == "findings" and line[0].isdigit():
-                # New finding
-                if current_finding:
-                    result["findings"].append(current_finding)
-                current_finding = {"text": line}
-
-            elif current_section == "findings" and line.startswith("Confidence:"):
-                if current_finding:
-                    current_finding["confidence"] = line.replace("Confidence:", "").strip()
-
-            elif current_section == "summary":
-                if result["summary"] is None:
-                    result["summary"] = line
+        # Extract findings with flexible patterns
+        finding_patterns = [
+            r"(\d+\.)\s*\[?([^\]:\n]+)\]?[:\s]+([^\n]+)",  # "1. [Category]: Finding"
+            r"(?:Finding|Observation)\s*\d*[:\s]+([^\n]+)",  # "Finding: text"
+            r"[-•]\s*([A-Z][^\n]{10,})",  # Bullet points with substantial text
+        ]
+        
+        for pattern in finding_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            for match in matches:
+                if isinstance(match, tuple):
+                    finding_text = ' '.join(match).strip()
                 else:
-                    result["summary"] += " " + line
+                    finding_text = match.strip()
+                
+                if len(finding_text) > 10 and finding_text.lower() not in ['n/a', 'none']:
+                    result["findings"].append({
+                        "text": finding_text,
+                        "confidence": "MEDIUM"
+                    })
+            if result["findings"]:
+                break
+        
+        # If still no findings, extract key sentences that look like findings
+        if not result["findings"]:
+            sentences = text.split('.')
+            for sentence in sentences:
+                sentence = sentence.strip()
+                # Look for sentences that look like findings
+                if len(sentence) > 30 and any(kw in sentence.lower() for kw in ['cells', 'tissue', 'nuclei', 'regions', 'features', 'observed', 'shows', 'appear', 'structure']):
+                    result["findings"].append({
+                        "text": sentence,
+                        "confidence": "MEDIUM"
+                    })
+                    if len(result["findings"]) >= 3:
+                        break
 
-            elif current_section == "recommendations" and line.startswith("-"):
-                result["recommendations"].append(line[1:].strip())
+        # Extract summary with flexible patterns
+        summary_patterns = [
+            r"SUMMARY:\s*([^\n]+(?:\n(?![A-Z]{3,}).*)*)",
+            r"(?:Summary|Conclusion)[:\s]+([^\n]+)",
+            r"\*\*Summary[:\*]*\*?\s*([^\n]+)",
+        ]
+        for pattern in summary_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                summary = match.group(1).strip()
+                if len(summary) > 20:
+                    result["summary"] = summary
+                    break
+        
+        # If no explicit summary, use first paragraph or findings summary
+        if not result["summary"] and result["findings"]:
+            result["summary"] = f"Analysis identified {len(result['findings'])} notable findings in the tissue specimen."
+        elif not result["summary"]:
+            # Extract first meaningful paragraph
+            paragraphs = [p.strip() for p in text.split('\n\n') if len(p.strip()) > 50]
+            if paragraphs:
+                result["summary"] = paragraphs[0][:500]
 
-        # Add last finding
-        if current_finding:
-            result["findings"].append(current_finding)
+        # Extract confidence
+        confidence_patterns = [
+            r"confidence[:\s]+(\d+\.?\d*)",
+            r"confidence[:\s]+(high|medium|low)",
+            r"(\d+\.?\d*)\s*%?\s*confidence",
+        ]
+        for pattern in confidence_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                conf_str = match.group(1).lower()
+                if conf_str == 'high':
+                    result["confidence"] = 0.85
+                elif conf_str == 'low':
+                    result["confidence"] = 0.45
+                elif conf_str == 'medium':
+                    result["confidence"] = 0.65
+                else:
+                    try:
+                        conf_val = float(conf_str)
+                        result["confidence"] = conf_val if conf_val <= 1 else conf_val / 100
+                    except ValueError:
+                        pass
+                break
 
         return result

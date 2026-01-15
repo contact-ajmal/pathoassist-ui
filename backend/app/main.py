@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from .config import settings, init_directories
 from .models import (
@@ -116,6 +116,31 @@ async def health_check():
     )
 
 
+@app.get("/thumbnail/{case_id}")
+async def get_thumbnail(case_id: str):
+    """
+    Get slide thumbnail for a case.
+    
+    Args:
+        case_id: Case identifier
+        
+    Returns:
+        Thumbnail image file
+    """
+    # Don't validate case_id existence for thumbnail as it might not have metadata yet
+    case_dir = settings.CASES_DIR / case_id
+    thumbnail_path = case_dir / "thumbnails" / "thumbnail.png"
+    
+    if not thumbnail_path.exists():
+        raise HTTPException(status_code=404, detail="Thumbnail not found")
+    
+    return FileResponse(
+        path=str(thumbnail_path),
+        media_type="image/png",
+        filename=f"{case_id}_thumbnail.png"
+    )
+
+
 # ============================================================================
 # FILE UPLOAD
 # ============================================================================
@@ -141,18 +166,41 @@ async def upload_slide(
         # Generate case ID
         case_id = f"case_{uuid.uuid4().hex[:12]}"
 
-        logger.info(f"Processing upload for case {case_id}: {file.filename}")
-
-        # Save file temporarily
-        temp_path = settings.UPLOAD_DIR / f"temp_{case_id}_{file.filename}"
-        with open(temp_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        # Sanitize filename
+        # Sanitize filename first
         safe_filename = sanitize_filename(file.filename)
 
+        # Ensure upload directory exists
+        logger.info(f"Checking UPLOAD_DIR: {settings.UPLOAD_DIR}")
+        settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Created UPLOAD_DIR: {settings.UPLOAD_DIR.exists()}")
+
+        # Save file temporarily using safe filename
+        temp_path = settings.UPLOAD_DIR / f"temp_{case_id}_{safe_filename}"
+        
+        # DEBUG DIAGNOSTICS
+        print(f"--- DEBUG UPLOAD ---")
+        print(f"UPLOAD_DIR: {settings.UPLOAD_DIR}")
+        print(f"UPLOAD_DIR exists: {settings.UPLOAD_DIR.exists()}")
+        print(f"UPLOAD_DIR is dir: {settings.UPLOAD_DIR.is_dir()}")
+        print(f"Resolved UPLOAD_DIR: {settings.UPLOAD_DIR.resolve()}")
+        print(f"Temp Path: {temp_path}")
+        print(f"Resolved Temp Path: {temp_path.resolve()}")
+        print(f"Temp Parent: {temp_path.parent}")
+        print(f"Temp Parent Exists: {temp_path.parent.exists()}")
+        print(f"--------------------")
+
+        try:
+            with open(temp_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+        except Exception as e:
+            print(f"CRITICAL WRITE ERROR: {e}")
+            raise e
+
+        # Get file size while it exists
+        file_size = temp_path.stat().st_size
+
         # Move to case directory
-        await storage_manager.save_uploaded_file(case_id, temp_path, safe_filename)
+        dest_path = await storage_manager.save_uploaded_file(case_id, temp_path, safe_filename)
 
         # Update status
         await storage_manager.update_case_status(
@@ -167,7 +215,7 @@ async def upload_slide(
         return UploadResponse(
             case_id=case_id,
             filename=safe_filename,
-            file_size=temp_path.stat().st_size,
+            file_size=file_size,
             status=CaseStatus.UPLOADED,
             message="File uploaded successfully. Processing started.",
         )
@@ -587,9 +635,12 @@ async def delete_case(case_id: str):
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
     """Handle HTTP exceptions."""
-    return ErrorResponse(
-        error=exc.detail,
-        detail=str(exc),
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": exc.detail,
+            "detail": str(exc),
+        },
     )
 
 
@@ -597,9 +648,12 @@ async def http_exception_handler(request, exc):
 async def general_exception_handler(request, exc):
     """Handle general exceptions."""
     logger.error(f"Unhandled exception: {exc}")
-    return ErrorResponse(
-        error="Internal server error",
-        detail=str(exc),
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal server error",
+            "detail": str(exc),
+        },
     )
 
 

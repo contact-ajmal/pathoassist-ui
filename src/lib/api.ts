@@ -19,6 +19,13 @@ import type {
 
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
+/**
+ * Get thumbnail URL for a case (direct URL, not API call)
+ */
+export function getThumbnailUrl(caseId: string): string {
+  return `${API_BASE_URL}/thumbnail/${caseId}`;
+}
+
 class ApiError extends Error {
   constructor(
     public status: number,

@@ -5,6 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useState } from 'react';
 import { useCase } from '@/contexts/CaseContext';
+import { getThumbnailUrl } from '@/lib/api';
 
 interface ViewerScreenProps {
   onProceed: () => void;
@@ -28,13 +29,15 @@ function formatFileSize(bytes: number | undefined): string {
 
 export function ViewerScreen({ onProceed }: ViewerScreenProps) {
   const [zoom, setZoom] = useState([25]);
-  const { metadata, processingResult, filename } = useCase();
+  const { caseId, metadata, processingResult, filename } = useCase();
 
   const tissuePatches = processingResult?.tissue_patches ?? 0;
   const totalPatches = processingResult?.total_patches ?? 0;
   const tissueCoverage = totalPatches > 0
     ? Math.round((tissuePatches / totalPatches) * 100)
     : 0;
+
+  const thumbnailUrl = caseId ? getThumbnailUrl(caseId) : null;
 
   return (
     <div className="h-full flex animate-fade-in">
@@ -84,29 +87,46 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
         </div>
 
         {/* Viewer Area */}
-        <div className="flex-1 relative bg-muted/30">
-          {/* Slide Placeholder */}
-          <div className="absolute inset-4 bg-gradient-to-br from-pink-100 via-purple-50 to-blue-50 rounded-lg border shadow-inner flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-64 h-48 mx-auto mb-4 bg-gradient-to-br from-pink-200/50 via-purple-100/50 to-pink-100/50 rounded-lg border-2 border-dashed border-primary/20 flex items-center justify-center">
-                <div className="text-sm text-muted-foreground">
-                  <p className="font-medium">Whole Slide Image Viewer</p>
-                  <p className="text-xs mt-1 truncate max-w-[200px]">
-                    {filename || metadata?.filename || 'No slide loaded'}
-                  </p>
+        <div className="flex-1 relative bg-muted/30 overflow-hidden">
+          {/* Slide Image */}
+          <div className="absolute inset-4 rounded-lg border shadow-inner flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
+            {thumbnailUrl ? (
+              <img
+                src={thumbnailUrl}
+                alt="Slide Thumbnail"
+                className="max-w-full max-h-full object-contain"
+                style={{ transform: `scale(${zoom[0] / 25})` }}
+              />
+            ) : (
+              <div className="text-center">
+                <div className="w-64 h-48 mx-auto mb-4 bg-gradient-to-br from-pink-200/50 via-purple-100/50 to-pink-100/50 rounded-lg border-2 border-dashed border-primary/20 flex items-center justify-center">
+                  <div className="text-sm text-muted-foreground">
+                    <p className="font-medium">Whole Slide Image Viewer</p>
+                    <p className="text-xs mt-1 truncate max-w-[200px]">
+                      {filename || metadata?.filename || 'No slide loaded'}
+                    </p>
+                  </div>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Pan and zoom to explore the tissue sample
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Pan and zoom to explore the tissue sample
-              </p>
-            </div>
+            )}
           </div>
 
           {/* Minimap */}
           <div className="slide-minimap">
-            <div className="w-full h-full bg-gradient-to-br from-pink-100/50 to-purple-50/50 relative">
-              <div className="absolute top-2 left-2 w-8 h-6 border-2 border-primary rounded-sm" />
-            </div>
+            {thumbnailUrl ? (
+              <img
+                src={thumbnailUrl}
+                alt="Minimap"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-pink-100/50 to-purple-50/50 relative">
+                <div className="absolute top-2 left-2 w-8 h-6 border-2 border-primary rounded-sm" />
+              </div>
+            )}
           </div>
 
           {/* Coordinates */}
