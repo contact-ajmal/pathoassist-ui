@@ -37,7 +37,3 @@ ENV/
 backend/venv/
 backend/data/
 backend/.env
-*.svs
-*.ndpi
-*.mrxs
-*.tiff

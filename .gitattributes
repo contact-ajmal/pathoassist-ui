@@ -1,0 +1,2 @@
+sample/*.svs filter=lfs diff=lfs merge=lfs -text
+sample/*.ndpi filter=lfs diff=lfs merge=lfs -text
