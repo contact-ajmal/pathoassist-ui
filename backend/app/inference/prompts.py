@@ -28,41 +28,45 @@ SLIDE CONTEXT:
 {clinical_context}
 
 ANALYSIS REQUEST:
-Provide a structured analysis including:
-1. Tissue Type Classification
-2. Cellular Observations (cellularity, nuclear features, mitotic activity)
-3. Tissue Architecture
-4. Notable Features (inflammation, necrosis, etc.)
-5. Confidence Assessment
+Provide a **DETAILED and COMPREHENSIVE** pathology report. Do not be brief. Expand on all observations.
 
-For each finding:
-- State your observation
-- Provide confidence level (HIGH/MEDIUM/LOW)
-- Explain reasoning
-- Note limitations or uncertainties
+1. **Tissue Type Classification**: Detailed description of the tissue architecture and origin.
+2. **Microscopic Description**:
+   - Cellular features (nuclei size, shape, chromatin pattern, nucleoli)
+   - Cytoplasmic features
+   - Mitotic activity (count and appearance)
+   - Stroma and background adjustments
+3. **Notable Features**:
+   - Detailed assessment of inflammation (type and severity)
+   - Presence of necrosis or apoptosis
+   - Vascular invasion or other architectural findings
+4. **Summary & Conclusion**: A cohesive narrative summarizing the case.
 
-Remember: This is decision support. All findings require pathologist verification.
+For each finding, provide:
+- **Observation**: Comprehensive description of what is seen.
+- **Confidence**: (HIGH/MEDIUM/LOW) with justification.
+- **Significance**: Why this feature matters clinically.
 
-FORMAT YOUR RESPONSE AS FOLLOWS:
+Format your response as follows:
 
 TISSUE TYPE: [type] (Confidence: [level])
 
 FINDINGS:
-1. [Category]: [Finding]
+1. [Category]: [Detailed Finding Description]
    Confidence: [HIGH/MEDIUM/LOW]
-   Details: [explanation]
+   Details: [Extended explanation of appearance and significance]
 
-2. [Continue for all findings]
+... [Continue for all features]
 
 SUMMARY:
-[2-3 sentence narrative summary]
+[Provide a formal, highly detailed pathology case summary. Integrate the clinical context (if valid) with the microscopic findings. Discuss the differential diagnosis if applicable based on the visual features. This summary should read like a professional pathologist's final report comment, avoiding generic fluff. Focus on the biological significance of the findings.]
 
 RECOMMENDATIONS:
-- [Suggested follow-up tests or additional analysis]
+- [Specific tests, stains, or clinical correlations recommended]
 
 CONFIDENCE ASSESSMENT:
 Overall analysis confidence: [score 0-1]
-Limitations: [any limitations]"""
+Limitations: [Specific limitations of this analysis]"""
 
 # Template for simple description
 DESCRIPTION_TEMPLATE = """Provide a brief clinical description of the following pathology observations:
@@ -90,10 +94,15 @@ class PromptBuilder:
         """Initialize prompt builder."""
         self.system_instruction = SYSTEM_INSTRUCTION
 
+    def get_system_prompt(self) -> str:
+        """Get the system instruction."""
+        return self.system_instruction
+
     def build_analysis_prompt(
         self,
         patches: List[PatchInfo],
         clinical_context: Optional[str] = None,
+        template_content: Optional[str] = None,
     ) -> str:
         """
         Build prompt for pathology analysis.
@@ -101,6 +110,7 @@ class PromptBuilder:
         Args:
             patches: List of analyzed patches
             clinical_context: Optional clinical context
+            template_content: Optional custom template content. Uses default if None.
 
         Returns:
             Formatted prompt
@@ -141,12 +151,26 @@ class PromptBuilder:
         if clinical_context:
             clinical_section = f"\nCLINICAL CONTEXT:\n{clinical_context}\n"
 
+        # Determine template to use
+        # If template_content is provided, use it. Otherwise fallback to default.
+        template_to_use = template_content if template_content else PATHOLOGY_ANALYSIS_TEMPLATE
+
         # Build prompt
-        prompt = PATHOLOGY_ANALYSIS_TEMPLATE.format(
-            num_patches=total_patches,
-            tissue_summary=tissue_summary,
-            clinical_context=clinical_section,
-        )
+        # We use .format() but handle potential KeyErrors if custom templates don't have all keys
+        # We try to fill standard keys
+        try:
+            prompt = template_to_use.format(
+                num_patches=total_patches,
+                tissue_summary=tissue_summary,
+                clinical_context=clinical_section,
+            )
+        except KeyError as e:
+            # Fallback: if template is missing keys or has extra keys, just append context
+            # This is a safety mechanism for user templates
+            prompt = (
+                f"{template_to_use}\n\n"
+                f"CONTEXT:\nRegions: {total_patches}\nSummary: {tissue_summary}\n{clinical_section}"
+            )
 
         return prompt
 

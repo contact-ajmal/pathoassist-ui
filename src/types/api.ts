@@ -37,6 +37,22 @@ export interface SlideMetadata {
   level_count: number;
   level_dimensions: [number, number][];
   created_at: string;
+  // Clinical Data
+  patient_age?: number | null;
+  patient_gender?: string | null;
+  body_site?: string | null;
+  procedure_type?: string | null;
+  stain_type?: string;
+  clinical_history?: string | null;
+}
+
+export interface CaseMetadataUpdate {
+  patient_age?: number | null;
+  patient_gender?: string | null;
+  body_site?: string | null;
+  procedure_type?: string | null;
+  stain_type?: string | null;
+  clinical_history?: string | null;
 }
 
 export interface PatchInfo {
@@ -187,4 +203,15 @@ export interface ErrorResponse {
   error: string;
   detail: string | null;
   case_id: string | null;
+}
+
+export interface SystemSettings {
+  model_name: string;
+  inference_mode: string;
+  remote_inference_url?: string | null;
+  remote_api_key?: string | null;
+  max_tokens: number;
+  temperature: number;
+  report_template: string;
+  confidence_threshold: number;
 }

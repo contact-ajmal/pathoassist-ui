@@ -17,7 +17,12 @@ class Settings(BaseSettings):
     # Server
     HOST: str = "127.0.0.1"
     PORT: int = 8000
-    CORS_ORIGINS: list[str] = ["http://localhost:8080", "http://127.0.0.1:8080"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://localhost:8006",
+        "http://127.0.0.1:8006",
+    ]
 
     # Storage
     BASE_DIR: Path = Path(__file__).parent.parent
@@ -43,10 +48,12 @@ class Settings(BaseSettings):
     # AI Inference
     MODEL_NAME: str = "google/medgemma-1.5-4b-it"  # Specialized Medical Model
     USE_QUANTIZATION: bool = True  # Enable 8-bit quantization
-    MAX_TOKENS: int = 1024
+    MAX_TOKENS: int = 4096
     TEMPERATURE: float = 0.7
     TOP_P: float = 0.9
     DEVICE: str = "cpu"  # Will auto-detect GPU if available
+    REMOTE_INFERENCE_URL: Optional[str] = None  # URL for remote inference (e.g. ngrok/colab)
+    REMOTE_API_KEY: Optional[str] = None  # Optional API key for remote service
 
     # Safety & Compliance
     CONFIDENCE_THRESHOLD: float = 0.6  # Minimum confidence for findings

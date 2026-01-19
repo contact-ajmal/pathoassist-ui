@@ -1,4 +1,4 @@
-import { Settings, Download, Cpu, MonitorDot, HardDrive, Wifi, User } from 'lucide-react';
+import { Settings, Download, MonitorDot, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PatientRecord } from '@/types/patient';
 
@@ -25,6 +25,7 @@ export function Header({ onSettingsClick, onExportClick, onPatientClick, selecte
 
       {/* Center - Status & Patient */}
       <div className="flex items-center gap-6">
+
         {/* Patient Indicator */}
         <Button
           variant="ghost"
@@ -44,47 +45,22 @@ export function Header({ onSettingsClick, onExportClick, onPatientClick, selecte
             <span>Select Patient</span>
           )}
         </Button>
-
-        {/* Offline Status */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/20 rounded-full">
-            <Wifi className="w-3 h-3 text-primary-foreground/80" />
-            <span className="text-xs font-medium">Offline Mode</span>
-          </div>
-          <span className="text-xs text-header-foreground/60">Local AI Ready</span>
-        </div>
-
-        {/* Hardware Status */}
-        <div className="flex items-center gap-3">
-          <div className="hardware-indicator">
-            <Cpu className="w-3.5 h-3.5 text-success" />
-            <span className="text-header-foreground/80">CPU 24%</span>
-          </div>
-          <div className="hardware-indicator">
-            <HardDrive className="w-3.5 h-3.5 text-success" />
-            <span className="text-header-foreground/80">GPU 0%</span>
-          </div>
-          <div className="hardware-indicator">
-            <MonitorDot className="w-3.5 h-3.5 text-warning" />
-            <span className="text-header-foreground/80">RAM 4.2GB</span>
-          </div>
-        </div>
       </div>
 
       {/* Right - Actions */}
       <div className="flex items-center gap-2">
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onExportClick}
           className="text-header-foreground/80 hover:text-header-foreground hover:bg-header-foreground/10"
         >
           <Download className="w-4 h-4 mr-1.5" />
           Export Report
         </Button>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onSettingsClick}
           className="text-header-foreground/80 hover:text-header-foreground hover:bg-header-foreground/10"
         >

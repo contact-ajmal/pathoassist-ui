@@ -15,6 +15,7 @@ from .config import settings, init_directories
 from .models import (
     UploadResponse,
     SlideMetadata,
+    CaseMetadataUpdate,
     WSIProcessingResult,
     ROISelection,
     ROIResult,
@@ -26,6 +27,7 @@ from .models import (
     HealthResponse,
     CaseStatus,
     ErrorResponse,
+    SystemSettings,
 )
 from .wsi import WSIProcessor
 from .roi import ROISelector
@@ -36,6 +38,12 @@ from .storage import StorageManager
 from .utils import get_logger, validate_wsi_file, validate_case_id, sanitize_filename
 
 logger = get_logger(__name__)
+
+# Define base directory and template directory
+BASE_DIR = Path(__file__).resolve().parent.parent
+TEMPLATE_DIR = BASE_DIR / "data" / "templates"
+TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
+
 
 
 # Global instances
@@ -114,6 +122,103 @@ async def health_check():
         model_loaded=inference_engine.is_loaded,
         storage_available=settings.DATA_DIR.exists(),
     )
+
+
+# ============================================================================
+# SETTINGS
+# ============================================================================
+
+@app.get("/settings", response_model=SystemSettings)
+async def get_settings():
+    """Get current system settings."""
+    return SystemSettings(
+        model_name=settings.MODEL_NAME,
+        inference_mode=settings.DEVICE,
+        remote_inference_url=settings.REMOTE_INFERENCE_URL,
+        remote_api_key=settings.REMOTE_API_KEY,
+        max_tokens=settings.MAX_TOKENS,
+        temperature=settings.TEMPERATURE,
+        report_template=settings.REPORT_TEMPLATE,
+        confidence_threshold=settings.CONFIDENCE_THRESHOLD,
+    )
+
+
+@app.put("/settings", response_model=SystemSettings)
+async def update_settings(new_settings: SystemSettings):
+    """
+    Update system settings.
+    Triggers model reload if inference settings change.
+    """
+    # Track changes requiring reload
+    reload_required = (
+        new_settings.model_name != settings.MODEL_NAME or
+        new_settings.inference_mode != settings.DEVICE or
+        new_settings.remote_inference_url != settings.REMOTE_INFERENCE_URL
+    )
+
+    # Update global settings
+    settings.MODEL_NAME = new_settings.model_name
+    settings.DEVICE = new_settings.inference_mode
+    settings.REMOTE_INFERENCE_URL = new_settings.remote_inference_url
+    settings.REMOTE_API_KEY = new_settings.remote_api_key
+    settings.MAX_TOKENS = new_settings.max_tokens
+    settings.TEMPERATURE = new_settings.temperature
+    settings.REPORT_TEMPLATE = new_settings.report_template
+    settings.CONFIDENCE_THRESHOLD = new_settings.confidence_threshold
+
+    if reload_required:
+        logger.info("Settings changed detected, reloading model...")
+        inference_engine.unload_model()
+        success = inference_engine.load_model()
+        if not success:
+            logger.warning("Failed to reload model with new settings")
+    
+    return new_settings
+
+
+# ============================================================================
+# TEMPLATES
+# ============================================================================
+
+@app.get("/templates", response_model=list[str])
+async def list_templates():
+    """List available report templates."""
+    templates = [f.stem for f in TEMPLATE_DIR.glob("*.txt")]
+    return sorted(templates)
+
+
+
+@app.post("/templates/upload")
+async def upload_template(file: UploadFile = File(...)):
+    """Upload a new report template."""
+    filename = sanitize_filename(file.filename)
+    if not filename.endswith(".txt"):
+        filename += ".txt"
+        
+    file_path = TEMPLATE_DIR / filename
+    
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        return {"message": "Template uploaded successfully", "filename": file_path.stem}
+    except Exception as e:
+        logger.error(f"Template upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+
+@app.delete("/templates/{name}")
+async def delete_template(name: str):
+    """Delete a custom template."""
+    if name.lower() in ["clinical", "research", "brief"]:
+        raise HTTPException(status_code=400, detail="Cannot delete default templates")
+        
+    template_path = TEMPLATE_DIR / f"{name}.txt"
+    if template_path.exists():
+        template_path.unlink()
+        return {"message": "Template deleted"}
+        
+    raise HTTPException(status_code=404, detail="Template not found")
 
 
 @app.get("/thumbnail/{case_id}")
@@ -306,6 +411,28 @@ async def get_metadata(case_id: str):
     return metadata
 
 
+@app.put("/metadata/{case_id}", response_model=SlideMetadata)
+async def update_metadata(case_id: str, update: CaseMetadataUpdate):
+    """
+    Update case metadata with clinical information.
+    """
+    validate_case_id(case_id)
+    
+    # Load existing metadata
+    metadata = await storage_manager.load_metadata(case_id)
+    if not metadata:
+        raise HTTPException(status_code=404, detail="Metadata not found")
+        
+    # Update fields
+    update_data = update.model_dump(exclude_unset=True)
+    updated_metadata = metadata.model_copy(update=update_data)
+    
+    # Save back
+    await storage_manager.save_metadata(updated_metadata)
+    
+    return updated_metadata
+
+
 # ============================================================================
 # PATCHES
 # ============================================================================
@@ -484,11 +611,62 @@ async def analyze_case(request: AnalysisRequest):
         if not selected_patches:
             raise HTTPException(status_code=400, detail="No valid patches found")
 
+        # Load metadata for enhanced context
+        metadata = await storage_manager.load_metadata(request.case_id)
+        
+        # Build comprehensive clinical context
+        context_parts = []
+        
+        if metadata:
+            # Demographics
+            if metadata.patient_age or metadata.patient_gender:
+                age = str(metadata.patient_age) if metadata.patient_age else "?"
+                gender = metadata.patient_gender or "?"
+                context_parts.append(f"PATIENT: {age} years, {gender}")
+            
+            # Specimen info
+            if metadata.body_site:
+                context_parts.append(f"BODY SITE: {metadata.body_site}")
+            
+            if metadata.procedure_type:
+                context_parts.append(f"PROCEDURE: {metadata.procedure_type}")
+                
+            if metadata.stain_type:
+                context_parts.append(f"STAIN: {metadata.stain_type}")
+                
+            # History
+            if metadata.clinical_history:
+                context_parts.append(f"CLINICAL HISTORY: {metadata.clinical_history}")
+
+        # Add any ephemeral context from request
+        if request.clinical_context:
+            context_parts.append(f"ADDITIONAL NOTES: {request.clinical_context}")
+            
+        full_context = "\n".join(context_parts)
+
+        # Load template content
+        template_name = settings.REPORT_TEMPLATE
+        if not template_name.endswith(".txt"):
+            template_name += ".txt"
+            
+        template_path = TEMPLATE_DIR / template_name
+        template_content = None
+        
+        if template_path.exists():
+            try:
+                with open(template_path, "r") as f:
+                    template_content = f.read()
+            except Exception as e:
+                logger.warning(f"Failed to read template {template_name}: {e}")
+        else:
+            logger.warning(f"Template {template_name} not found. Using default.")
+
         # Run analysis
         result = inference_engine.analyze_patches(
             case_id=request.case_id,
             patches=selected_patches,
-            clinical_context=request.clinical_context,
+            clinical_context=full_context,
+            template_content=template_content,
         )
 
         # Save result

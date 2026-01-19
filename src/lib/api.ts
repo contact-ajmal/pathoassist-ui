@@ -17,7 +17,7 @@ import type {
   HealthResponse,
 } from '@/types/api';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = 'http://127.0.0.1:8007';
 
 /**
  * Get thumbnail URL for a case (direct URL, not API call)
@@ -86,6 +86,24 @@ export async function uploadSlide(file: File): Promise<UploadResponse> {
  */
 export async function getMetadata(caseId: string): Promise<SlideMetadata> {
   const response = await fetch(`${API_BASE_URL}/metadata/${caseId}`);
+  return handleResponse<SlideMetadata>(response);
+}
+
+/**
+ * Update case metadata
+ */
+export async function updateMetadata(
+  caseId: string,
+  update: import('../types/api').CaseMetadataUpdate
+): Promise<SlideMetadata> {
+  const response = await fetch(`${API_BASE_URL}/metadata/${caseId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(update),
+  });
+
   return handleResponse<SlideMetadata>(response);
 }
 
@@ -236,6 +254,53 @@ export async function pollCaseStatus(
   }
 
   throw new ApiError(408, 'Timeout', 'Polling timed out');
+}
+
+
+/**
+ * Get system settings
+ */
+export async function getSettings(): Promise<import('../types/api').SystemSettings> {
+  const response = await fetch(`${API_BASE_URL}/settings`);
+  return handleResponse<import('../types/api').SystemSettings>(response);
+}
+
+/**
+ * Update system settings
+ */
+export async function updateSettings(
+  settings: import('../types/api').SystemSettings
+): Promise<import('../types/api').SystemSettings> {
+  const response = await fetch(`${API_BASE_URL}/settings`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(settings),
+  });
+  return handleResponse<import('../types/api').SystemSettings>(response);
+}
+
+/**
+ * List available report templates
+ */
+export async function listTemplates(): Promise<string[]> {
+  const response = await fetch(`${API_BASE_URL}/templates`);
+  return handleResponse<string[]>(response);
+}
+
+/**
+ * Upload a new report template
+ */
+export async function uploadTemplate(file: File): Promise<{ message: string; filename: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE_URL}/templates/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+  return handleResponse<{ message: string; filename: string }>(response);
 }
 
 export { ApiError };

@@ -1,11 +1,10 @@
-"""
-AI inference engine using MedGemma for pathology analysis.
-Now with multimodal vision-language capabilities.
-"""
 import time
 import torch
+import requests
+import base64
+import io
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig
 
@@ -37,6 +36,11 @@ class InferenceEngine:
         self.is_loaded = False
         self.is_multimodal = False  # Track if model supports vision
 
+        if settings.REMOTE_INFERENCE_URL:
+            logger.info(f"Configured Remote URL: {settings.REMOTE_INFERENCE_URL}")
+        else:
+            logger.info("No Remote URL configured (local mode)")
+            
         logger.info(f"Inference engine initialized (device: {self.device})")
 
     def _detect_device(self) -> str:
@@ -63,6 +67,12 @@ class InferenceEngine:
         """
         if self.is_loaded:
             logger.info("Model already loaded")
+            return True
+
+        if settings.REMOTE_INFERENCE_URL:
+            logger.info(f"Using remote inference API at: {settings.REMOTE_INFERENCE_URL}")
+            self.is_multimodal = True  # Assume remote model is multimodal (MedGemma)
+            self.is_loaded = True
             return True
 
         try:
@@ -196,6 +206,7 @@ class InferenceEngine:
         case_id: str,
         patches: List[PatchInfo],
         clinical_context: Optional[str] = None,
+        template_content: Optional[str] = None,
     ) -> str:
         """
         Analyze patches using multimodal vision-language model.
@@ -204,6 +215,7 @@ class InferenceEngine:
             case_id: Case identifier
             patches: List of patch information
             clinical_context: Optional clinical context
+            template_content: Optional custom template content
             
         Returns:
             Generated analysis text
@@ -222,15 +234,14 @@ class InferenceEngine:
                     break
         
         # Build system message
-        system_text = """You are an expert pathologist analyzing histopathology tissue samples.
-Provide a structured analysis including:
-1. Tissue type identification
-2. Cellular observations (cellularity, nuclear features)
-3. Any abnormalities or notable features
-4. Confidence assessment
+        system_text = self.prompt_builder.get_system_prompt()
 
-Use appropriate medical terminology. Express uncertainty where warranted.
-Format your response with clear sections: TISSUE TYPE, FINDINGS, SUMMARY."""
+        # Build text prompt using the builder (handles template injection)
+        text_prompt = self.prompt_builder.build_analysis_prompt(
+            patches=patches, 
+            clinical_context=clinical_context,
+            template_content=template_content
+        )
 
         # Build user message with images
         if self.is_multimodal and patch_images:
@@ -238,19 +249,10 @@ Format your response with clear sections: TISSUE TYPE, FINDINGS, SUMMARY."""
             user_content = []
             for _ in patch_images:
                 user_content.append({"type": "image"})  # Just marker, no actual image data here
-            user_content.append({"type": "text", "text": "Analyze these pathology tissue patches."})
+            user_content.append({"type": "text", "text": text_prompt})
         else:
-            user_content = [{"type": "text", "text": f"Analyze these {len(patch_images)} tissue sample patches from a pathology slide:"}]
+            user_content = [{"type": "text", "text": text_prompt}]
         
-        # Add clinical context if provided
-        if clinical_context:
-            user_content.append({"type": "text", "text": f"\nClinical context: {clinical_context}"})
-        
-        user_content.append({
-            "type": "text", 
-            "text": "\n\nProvide your pathology analysis with TISSUE TYPE, FINDINGS (numbered list), and SUMMARY sections."
-        })
-
         messages = [
             {"role": "system", "content": [{"type": "text", "text": system_text}]},
             {"role": "user", "content": user_content}
@@ -281,7 +283,7 @@ Format your response with clear sections: TISSUE TYPE, FINDINGS, SUMMARY."""
                     **inputs,
                     max_new_tokens=settings.MAX_TOKENS,
                     do_sample=True,
-                    temperature=0.7,
+                    temperature=settings.TEMPERATURE, # Use configured temperature
                     top_p=0.9,
                     pad_token_id=self.processor.tokenizer.eos_token_id if hasattr(self.processor, 'tokenizer') else 0,
                 )
@@ -316,6 +318,7 @@ Format your response with clear sections: TISSUE TYPE, FINDINGS, SUMMARY."""
         self,
         patches: List[PatchInfo],
         clinical_context: Optional[str] = None,
+        template_content: Optional[str] = None,
     ) -> str:
         """
         Analyze patches using text-only model (fallback).
@@ -323,6 +326,7 @@ Format your response with clear sections: TISSUE TYPE, FINDINGS, SUMMARY."""
         Args:
             patches: List of patch information
             clinical_context: Optional clinical context
+            template_content: Optional custom template content
             
         Returns:
             Generated analysis text
@@ -331,6 +335,7 @@ Format your response with clear sections: TISSUE TYPE, FINDINGS, SUMMARY."""
         prompt = self.prompt_builder.build_analysis_prompt(
             patches=patches,
             clinical_context=clinical_context,
+            template_content=template_content,
         )
 
         # Tokenize input
@@ -355,22 +360,66 @@ Format your response with clear sections: TISSUE TYPE, FINDINGS, SUMMARY."""
 
         return generated_text
 
+    def _analyze_remote(self, text_prompt: str, patch_images: List[Image.Image], system_text: str) -> str:
+        """
+        Perform analysis using remote inference API.
+        """
+        logger.info(f"Sending request to remote API: {settings.REMOTE_INFERENCE_URL}")
+        
+        # 1. Encode images to base64
+        encoded_images = []
+        for img in patch_images:
+            # Resize if too large to save bandwidth
+            if img.size[0] > 224 or img.size[1] > 224:
+                img = img.resize((224, 224))
+                
+            buffered = io.BytesIO()
+            img.save(buffered, format="JPEG", quality=85)
+            img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+            encoded_images.append(img_str)
+            
+        # 2. Construct payload
+        payload = {
+            "text": text_prompt,
+            "images": encoded_images,
+            "system_prompt": system_text,  # Optional depending on colab implementation
+            "parameters": {
+                "max_new_tokens": settings.MAX_TOKENS,
+                "temperature": settings.TEMPERATURE,
+            }
+        }
+        
+        # 3. Send Request
+        headers = {"Content-Type": "application/json"}
+        if settings.REMOTE_API_KEY:
+            headers["Authorization"] = f"Bearer {settings.REMOTE_API_KEY}"
+            
+        try:
+            response = requests.post(
+                settings.REMOTE_INFERENCE_URL, 
+                json=payload, 
+                headers=headers,
+                timeout=120
+            )
+            response.raise_for_status()
+            result = response.json()
+            return result.get("response", "")
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Remote inference failed: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"API Error Response: {e.response.text}")
+            raise RuntimeError(f"Remote API Error: {str(e)}")
+
     def analyze_patches(
         self,
         case_id: str,
         patches: List[PatchInfo],
         clinical_context: Optional[str] = None,
+        template_content: Optional[str] = None,
     ) -> AnalysisResult:
         """
         Analyze pathology patches using AI.
-
-        Args:
-            case_id: Case identifier
-            patches: List of patch information
-            clinical_context: Optional clinical context
-
-        Returns:
-            Analysis result
         """
         start_time = time.time()
 
@@ -381,16 +430,50 @@ Format your response with clear sections: TISSUE TYPE, FINDINGS, SUMMARY."""
 
         # Generate analysis using appropriate method
         try:
-            if self.is_multimodal:
+            generated_text = ""
+            
+            # Load images if needed (remote or multimodal)
+            patch_images = []
+            if settings.REMOTE_INFERENCE_URL or self.is_multimodal:
+                max_images = 1 # Limit images
+                for patch in patches[:max_images * 2]:
+                    img = self._load_patch_image(case_id, patch)
+                    if img:
+                        img = img.resize((224, 224), Image.Resampling.LANCZOS)
+                        patch_images.append(img)
+                        if len(patch_images) >= max_images:
+                            break
+            
+            # 1. REMOTE INFERENCE
+            if settings.REMOTE_INFERENCE_URL:
+                # Build analysis prompt
+                text_prompt = self.prompt_builder.build_analysis_prompt(
+                    patches, 
+                    clinical_context, 
+                    template_content
+                )
+                
+                generated_text = self._analyze_remote(
+                    text_prompt=text_prompt,
+                    patch_images=patch_images,
+                    system_text=self.prompt_builder.get_system_prompt()
+                )
+                
+            # 2. LOCAL MULTIMODAL
+            elif self.is_multimodal:
                 generated_text = self._analyze_with_images(
                     case_id=case_id,
                     patches=patches,
                     clinical_context=clinical_context,
+                    template_content=template_content,
                 )
+                
+            # 3. LOCAL TEXT-ONLY
             else:
                 generated_text = self._analyze_text_only(
                     patches=patches,
                     clinical_context=clinical_context,
+                    template_content=template_content,
                 )
 
             # Check safety

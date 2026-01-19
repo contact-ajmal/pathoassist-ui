@@ -2,12 +2,21 @@ import { useState, useRef } from 'react';
 import { Upload, FileImage, Info, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useCase } from '@/contexts/CaseContext';
-import { uploadSlide, getCaseStatus, getMetadata, getPatches } from '@/lib/api';
+import { uploadSlide, getCaseStatus, getMetadata, getPatches, updateMetadata } from '@/lib/api';
 import type { CaseStatus } from '@/types/api';
 
 interface UploadScreenProps {
@@ -31,7 +40,15 @@ function formatFileSize(bytes: number): string {
 export function UploadScreen({ onProceed }: UploadScreenProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Clinical Metadata State
+  const [patientAge, setPatientAge] = useState<string>('');
+  const [patientGender, setPatientGender] = useState<string>('');
+  const [bodySite, setBodySite] = useState('');
+  const [procedure, setProcedure] = useState('');
+  const [stainType, setStainType] = useState('H&E');
   const [clinicalContext, setClinicalContext] = useState('');
+
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [progress, setProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState('');
@@ -139,6 +156,20 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
       setFilename(uploadResponse.filename);
       setStatus(uploadResponse.status);
 
+      // Submit Metadata immediately after upload
+      try {
+        await updateMetadata(uploadResponse.case_id, {
+          patient_age: patientAge ? parseInt(patientAge) : null,
+          patient_gender: patientGender || null,
+          body_site: bodySite || null,
+          procedure_type: procedure || null,
+          stain_type: stainType || null,
+          clinical_history: clinicalContext || null
+        });
+      } catch (metaErr) {
+        console.warn("Failed to update metadata, proceeding with basic info", metaErr);
+      }
+
       setProgress(30);
       setUploadState('processing');
       setStatusMessage('Processing slide...');
@@ -166,8 +197,6 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
   };
 
   const handleProceed = () => {
-    // Store clinical context for later use in analysis
-    localStorage.setItem('clinicalContext', clinicalContext);
     onProceed();
   };
 
@@ -288,31 +317,108 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
           </Card>
         )}
 
-        {/* Clinical Context */}
+        {/* Case Information Form (Replaces simple Clinical Context) */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Info className="w-4 h-4 text-primary" />
-              Clinical Context
-              <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+              Case Information
+              <span className="text-xs font-normal text-muted-foreground">(Metadata helps improve AI accuracy)</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <Textarea
-              value={clinicalContext}
-              onChange={(e) => setClinicalContext(e.target.value)}
-              placeholder="e.g., 55-year-old male, lung biopsy, chronic cough, 30 pack-year smoking history"
-              className="min-h-[100px] resize-none"
-              disabled={uploadState === 'uploading' || uploadState === 'processing'}
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              Providing clinical context helps improve AI analysis accuracy
-            </p>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+               {/* Body Site */}
+               <div className="space-y-2">
+                <Label htmlFor="bodySite">Body Site</Label>
+                <Input 
+                  id="bodySite" 
+                  placeholder="e.g. Lung, Breast" 
+                  value={bodySite}
+                  onChange={(e) => setBodySite(e.target.value)}
+                  disabled={uploadState === 'uploading' || uploadState === 'processing'}
+                />
+              </div>
+
+              {/* Procedure */}
+               <div className="space-y-2">
+                <Label htmlFor="procedure">Procedure</Label>
+                <Select value={procedure} onValueChange={setProcedure} disabled={uploadState === 'uploading' || uploadState === 'processing'}>
+                  <SelectTrigger id="procedure">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Biopsy">Biopsy</SelectItem>
+                    <SelectItem value="Resection">Resection</SelectItem>
+                    <SelectItem value="Cytology">Cytology</SelectItem>
+                    <SelectItem value="Autopsy">Autopsy</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Age */}
+              <div className="space-y-2">
+                <Label htmlFor="age">Patient Age</Label>
+                <Input 
+                  id="age" 
+                  type="number" 
+                  placeholder="Years" 
+                  value={patientAge}
+                  onChange={(e) => setPatientAge(e.target.value)}
+                  disabled={uploadState === 'uploading' || uploadState === 'processing'}
+                />
+              </div>
+
+              {/* Gender */}
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender</Label>
+                 <Select value={patientGender} onValueChange={setPatientGender} disabled={uploadState === 'uploading' || uploadState === 'processing'}>
+                  <SelectTrigger id="gender">
+                     <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+               {/* Stain Type */}
+               <div className="col-span-2 space-y-2">
+                <Label htmlFor="stain">Stain Type</Label>
+                 <Select value={stainType} onValueChange={setStainType} disabled={uploadState === 'uploading' || uploadState === 'processing'}>
+                  <SelectTrigger id="stain">
+                     <SelectValue placeholder="Select stain" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="H&E">Hematoxylin & Eosin (H&E)</SelectItem>
+                    <SelectItem value="IHC">Immunohistochemistry (IHC)</SelectItem>
+                    <SelectItem value="PAS">PAS</SelectItem>
+                    <SelectItem value="Silver">Silver Stain</SelectItem>
+                    <SelectItem value="Giemsa">Giemsa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Clinical History */}
+            <div className="space-y-2">
+              <Label htmlFor="history">Clinical History / Notes</Label>
+              <Textarea
+                id="history"
+                value={clinicalContext}
+                onChange={(e) => setClinicalContext(e.target.value)}
+                placeholder="e.g., 55-year-old male, chronic cough, 30 pack-year smoking history"
+                className="min-h-[80px] resize-none"
+                disabled={uploadState === 'uploading' || uploadState === 'processing'}
+              />
+            </div>
           </CardContent>
         </Card>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4">
+        <div className="flex justify-end gap-3 pt-4 pb-8">
           {uploadState === 'idle' || uploadState === 'error' ? (
             <Button
               size="lg"
@@ -320,7 +426,7 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
               disabled={!selectedFile}
               className="px-8"
             >
-              {uploadState === 'error' ? 'Retry Upload' : 'Upload Slide'}
+              {uploadState === 'error' ? 'Retry Upload' : 'Upload Slide & Start'}
             </Button>
           ) : uploadState === 'ready' ? (
             <Button

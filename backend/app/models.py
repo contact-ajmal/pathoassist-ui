@@ -63,6 +63,24 @@ class SlideMetadata(BaseModel):
     level_count: int
     level_dimensions: List[tuple[int, int]]
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Clinical Data
+    patient_age: Optional[int] = None
+    patient_gender: Optional[str] = None
+    body_site: Optional[str] = None
+    procedure_type: Optional[str] = None
+    stain_type: str = "H&E"
+    clinical_history: Optional[str] = None
+
+
+class CaseMetadataUpdate(BaseModel):
+    """Request to update case metadata."""
+    patient_age: Optional[int] = None
+    patient_gender: Optional[str] = None
+    body_site: Optional[str] = None
+    procedure_type: Optional[str] = None
+    stain_type: Optional[str] = None
+    clinical_history: Optional[str] = None
 
 
 class PatchInfo(BaseModel):
@@ -229,3 +247,16 @@ class HealthResponse(BaseModel):
     model_loaded: bool
     storage_available: bool
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+class SystemSettings(BaseModel):
+    """Application system settings."""
+    model_name: str
+    inference_mode: str  # 'cpu', 'gpu', or 'auto'
+    remote_inference_url: Optional[str] = None
+    remote_api_key: Optional[str] = None
+    max_tokens: int
+    temperature: float
+    report_template: str
+    confidence_threshold: float
+
