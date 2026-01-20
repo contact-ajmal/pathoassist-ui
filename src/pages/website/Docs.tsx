@@ -132,7 +132,7 @@ export default function Docs() {
                                     </tr>
                                     <tr>
                                         <td className="p-4 font-mono text-teal-600">REMOTE_INFERENCE_URL</td>
-                                        <td className="p-4">URL for remote GPU instance (Colab/Ngrok)</td>
+                                        <td className="p-4">URL for remote GPU inference server</td>
                                         <td className="p-4 font-mono">""</td>
                                     </tr>
                                     <tr>

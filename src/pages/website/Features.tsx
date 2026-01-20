@@ -39,7 +39,7 @@ export default function Features() {
                             </div>
                             <h2 className="text-3xl font-bold text-slate-900 mb-6">Remote Inference Engine</h2>
                             <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                                Offload heavy computation to the cloud. PathoAssist seamlessly connects to remote GPU instances (like Google Colab via Ngrok) to run the 8GB+ MedGemma model, enabling powerful AI analysis even on standard laptops.
+                                Offload heavy computation to secure remote environments. PathoAssist seamlessly connects to external GPU instances to run the 8GB+ MedGemma model, enabling powerful AI analysis even on standard laptops without compromising local performance.
                             </p>
                             <div className="grid grid-cols-2 gap-4">
                                 {specs.map((spec) => (
