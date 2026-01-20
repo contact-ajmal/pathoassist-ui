@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useCase } from '@/contexts/CaseContext';
 import { getReport } from '@/lib/api';
 import type { ConfidenceLevel } from '@/types/api';
+import { FindingsViewer } from '@/components/report/FindingsViewer';
 
 interface ReviewScreenProps {
   onProceed: () => void;
@@ -31,6 +32,7 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeROIIndex, setActiveROIIndex] = useState<number | null>(null);
 
   // Initialize from report or fetch it
   useEffect(() => {
@@ -131,7 +133,6 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
       const fetchedReport = await getReport(caseId, clinicalContext);
       setReport(fetchedReport);
     } catch (err) {
-      // Fallback to analysis result if report fetch fails
       console.warn('Failed to fetch report, using analysis result:', err);
       if (analysisResult) {
         initializeFromAnalysis();
@@ -146,11 +147,13 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
   const getConfidenceBadge = (confidence: ConfidenceLevel) => {
     switch (confidence) {
       case 'high':
-        return 'bg-success/10 text-success border-success/30';
+        return 'bg-green-500/10 text-green-700 border-green-500/30';
       case 'medium':
-        return 'bg-warning/10 text-warning border-warning/30';
+        return 'bg-amber-500/10 text-amber-700 border-amber-500/30';
       case 'low':
-        return 'bg-destructive/10 text-destructive border-destructive/30';
+        return 'bg-red-500/10 text-red-700 border-red-500/30';
+      default:
+        return 'bg-slate-100 text-slate-600 border-slate-200';
     }
   };
 
@@ -159,191 +162,144 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
   };
 
   const handleReanalyze = () => {
-    // Clear the report and refetch
     setReport(null as any);
     fetchReport();
   };
 
+  const handleFieldClick = (field: ReportField) => {
+    setEditingField(field.id);
+
+    // Parse ROI index from visual evidence
+    if (field.visual_evidence) {
+      const match = field.visual_evidence.match(/ROI #(\d+)/i);
+      if (match) {
+        const index = parseInt(match[1]) - 1; // 1-based to 0-based
+        setActiveROIIndex(index);
+      }
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className="h-full flex items-center justify-center bg-slate-50">
         <div className="text-center space-y-4">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
-          <p className="text-muted-foreground">Loading report...</p>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-teal-600" />
+          <p className="text-slate-500 font-medium">Synthesizing multimodal report...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex animate-fade-in">
-      {/* Left Panel - Structured Report */}
-      <div className="flex-1 flex flex-col border-r">
-        <div className="h-14 border-b bg-card px-6 flex items-center justify-between shrink-0">
-          <div>
-            <h2 className="font-semibold">Structured Findings</h2>
-            <p className="text-xs text-muted-foreground">AI-generated analysis results</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {report && (
-              <Badge variant="outline" className="text-xs">
-                Confidence: {((report.confidence_score || 0) * 100).toFixed(0)}%
-              </Badge>
-            )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <History className="w-4 h-4 mr-1.5" />
-                  Version History
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>View previous versions</TooltipContent>
-            </Tooltip>
-          </div>
+    <div className="h-full flex flex-col lg:flex-row animate-fade-in bg-slate-50">
+
+      {/* LEFT PANEL: Findings Navigation */}
+      <div className="w-full lg:w-[320px] bg-white border-r flex flex-col shrink-0 h-[400px] lg:h-auto">
+        <div className="h-14 border-b px-4 flex items-center justify-between shrink-0 bg-slate-50">
+          <span className="font-semibold text-sm text-slate-700">Detailed Findings</span>
+          {report && <Badge variant="secondary" className="text-xs">{((report.confidence_score || 0) * 100).toFixed(0)}% Conf.</Badge>}
         </div>
 
-        <div className="flex-1 overflow-auto p-6 scrollbar-hide">
-          {/* Diagnostic Reasoning Section (HAI-DEF Feature) */}
-          {analysisResult?.differential_diagnosis && analysisResult.differential_diagnosis.length > 0 && (
-            <div className="mb-6 space-y-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Brain className="w-4 h-4 text-teal-600" />
-                <h3 className="font-semibold text-sm text-teal-900">Diagnostic Reasoning</h3>
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {fields.map((field) => (
+            <div
+              key={field.id}
+              onClick={() => handleFieldClick(field)}
+              className={cn(
+                "p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md",
+                editingField === field.id ? "border-teal-500 bg-teal-50 ring-1 ring-teal-500/20" : "border-slate-200 bg-white hover:border-teal-200"
+              )}
+            >
+              <div className="flex justify-between items-start mb-1">
+                <span className="text-xs font-bold uppercase text-slate-500 tracking-wider">{field.label}</span>
+                <Badge variant="outline" className={cn("text-[10px] h-5", getConfidenceBadge(field.confidence))}>
+                  {field.confidence}
+                </Badge>
               </div>
-              {analysisResult.differential_diagnosis.map((dd, idx) => (
-                <Card key={`dd-${idx}`} className="p-4 border-l-4 border-l-teal-500 bg-teal-50/30">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-sm">{dd.condition}</span>
-                    <Badge variant="outline" className={cn("text-xs uppercase", getConfidenceBadge(dd.likelihood))}>
-                      {dd.likelihood} Likelihood
-                    </Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <Progress value={dd.likelihood_score * 100} className="h-1.5 bg-teal-100" />
-                    <p className="text-xs text-muted-foreground leading-relaxed italic">
-                      "{dd.reasoning}"
-                    </p>
-                  </div>
-                </Card>
-              ))}
-              <div className="h-px bg-border my-4" />
-            </div>
-          )}
+              <p className="text-sm font-medium text-slate-800">{field.value}</p>
 
-          {fields.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              No findings available
+              {field.visual_evidence && (
+                <div className="mt-2 flex items-center gap-1.5 text-xs text-teal-600 bg-white/50 px-2 py-1 rounded border border-teal-100">
+                  <span className="font-bold">Evid:</span>
+                  <span className="truncate">{field.visual_evidence}</span>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="space-y-3 max-w-xl">
-              {fields.map((field) => (
-                <Card key={field.id} className="report-card p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="report-card-label text-xs text-muted-foreground uppercase tracking-wide">
-                      {field.label}
-                    </span>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Badge
-                          variant="outline"
-                          className={cn('text-xs', getConfidenceBadge(field.confidence))}
-                        >
-                          {field.confidence}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs">AI confidence level for this finding</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  {editingField === field.id ? (
-                    <Input
-                      value={field.value}
-                      onChange={(e) => updateField(field.id, e.target.value)}
-                      onBlur={() => setEditingField(null)}
-                      onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
-                      autoFocus
-                    />
-                  ) : (
-                    <div
-                      className="flex items-center justify-between group cursor-pointer"
-                      onClick={() => setEditingField(field.id)}
-                    >
-                      <div className="space-y-1">
-                        <p className="font-medium">{field.value}</p>
-                        {('visual_evidence' in field) && field.visual_evidence && (
-                          <div className="flex items-center gap-1.5 text-xs text-teal-600 bg-teal-50 px-2 py-1 rounded-md border border-teal-100">
-                            <span className="font-bold">Evidence:</span>
-                            <span>{field.visual_evidence}</span>
-                          </div>
-                        )}
-                      </div>
-                      <Edit3 className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  )}
-                </Card>
-              ))}
-            </div>
-          )}
+          ))}
         </div>
       </div>
 
-      {/* Right Panel - Narrative Report */}
-      <div className="flex-1 flex flex-col">
-        <div className="h-14 border-b bg-card px-6 flex items-center justify-between shrink-0">
-          <div>
-            <h2 className="font-semibold">Narrative Report</h2>
-            <p className="text-xs text-muted-foreground">Editable pathology report</p>
+      {/* CENTER PANEL: Interactive Evidence Viewer */}
+      <div className="flex-1 flex flex-col bg-slate-100 p-4 border-r overflow-hidden">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-teal-600 text-white p-1 rounded">
+              <Brain className="w-4 h-4" />
+            </div>
+            <h2 className="font-bold text-slate-800">Visual Evidence Grounding</h2>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Info className="w-3.5 h-3.5" />
-            <span>Case: {caseId?.slice(0, 16) || 'N/A'}</span>
-          </div>
+          <Badge variant="outline" className="bg-white">
+            Interactive Mode Active
+          </Badge>
         </div>
 
-        <div className="flex-1 overflow-auto p-6">
+        <FindingsViewer
+          activePatchIndex={activeROIIndex}
+          className="flex-1 shadow-sm border-slate-300"
+        />
+
+        {/* Diagnostic Reasoning (Contextual below viewer) */}
+        {analysisResult?.differential_diagnosis && (
+          <div className="mt-4 h-48 overflow-y-auto bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Diagnostic Reasoning Engine</h3>
+            <div className="space-y-3">
+              {analysisResult.differential_diagnosis.map((dd, idx) => (
+                <div key={idx} className="flex items-start gap-3 text-sm">
+                  <div className="w-16 shrink-0 pt-0.5">
+                    <span className="font-medium text-slate-900 block">{dd.likelihood_score * 100}%</span>
+                    <span className="text-[10px] text-slate-500">{dd.likelihood}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-teal-700">{dd.condition}</span>
+                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">"{dd.reasoning}"</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT PANEL: Final Narrative Report */}
+      <div className="w-full lg:w-[400px] flex flex-col bg-white h-[400px] lg:h-auto border-l shadow-xl z-10">
+        <div className="h-14 border-b px-6 flex items-center justify-between shrink-0 bg-slate-50">
+          <div>
+            <h2 className="font-semibold text-sm text-slate-700">Final Narrative</h2>
+            <p className="text-[10px] text-slate-400">Ready for Sign-out</p>
+          </div>
+          <Button size="sm" variant="ghost" className="h-8">
+            <Edit3 className="w-3.5 h-3.5 mr-1" />
+            Edit Mode
+          </Button>
+        </div>
+
+        <div className="flex-1 p-0">
           <Textarea
             value={narrative}
             onChange={(e) => setNarrative(e.target.value)}
-            placeholder="No narrative report available..."
-            className="min-h-full font-mono text-sm resize-none"
+            className="w-full h-full resize-none border-0 focus-visible:ring-0 rounded-none p-6 font-mono text-sm leading-relaxed"
+            placeholder="Generating narrative..."
           />
         </div>
 
-        {/* Footer */}
-        <div className="border-t p-4 space-y-4">
-          {/* Warnings */}
-          {report?.warnings && report.warnings.length > 0 && (
-            <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 text-sm">
-              <p className="font-medium text-warning">Warnings:</p>
-              <ul className="list-disc list-inside text-muted-foreground">
-                {report.warnings.map((warning, i) => (
-                  <li key={i}>{warning}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Disclaimer */}
-          <div className="disclaimer-banner flex items-start gap-3 bg-muted/50 rounded-lg p-3">
-            <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-warning" />
-            <div>
-              <p className="font-medium">AI-Assisted Output</p>
-              <p className="text-sm text-muted-foreground">
-                {report?.disclaimer ||
-                  'Final interpretation and diagnosis require review and validation by a licensed pathologist. This system is intended for decision support only.'}
-              </p>
-            </div>
+        <div className="p-4 border-t bg-slate-50 space-y-3">
+          <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 text-xs rounded border border-amber-100">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <p>{report?.disclaimer || "AI-generated. Verify before signing out."}</p>
           </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3">
-            <Button variant="outline" onClick={handleReanalyze}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Re-analyze
-            </Button>
-            <Button onClick={onProceed}>Approve & Continue to Export</Button>
-          </div>
+          <Button className="w-full bg-teal-600 hover:bg-teal-700" onClick={onProceed}>
+            Approve & Export Report
+          </Button>
         </div>
       </div>
     </div>
