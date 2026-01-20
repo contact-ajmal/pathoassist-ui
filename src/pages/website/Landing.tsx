@@ -14,7 +14,7 @@ export default function Landing() {
         {
             icon: <Brain className="h-6 w-6 text-teal-600" />,
             title: "MedGemma AI",
-            description: "Integrated with Google's MedGemma-4B multimodal model for analyzing tissue morphology and cellular patterns."
+            description: "Powered by Google's MedGemma-4B to perform true multimodal reasoning, synthesizing visual patterns with clinical patient data."
         },
         {
             icon: <FileText className="h-6 w-6 text-teal-600" />,
@@ -44,7 +44,7 @@ export default function Landing() {
                                     AI-Powered Assistant for <span className="text-teal-600">Modern Pathology</span>
                                 </h1>
                                 <p className="mt-6 text-lg text-slate-600 leading-relaxed">
-                                    PathoAssist combines advanced Whole Slide Imaging (WSI) with multimodal AI to provide real-time decision support, automated ROI analysis, and professional reporting.
+                                    PathoAssist combines advanced Whole Slide Imaging (WSI) with <strong>multimodal reasoning</strong> to synthesize visual evidence with patient history, offering deep, context-aware diagnostic support.
                                 </p>
                                 <div className="mt-8 flex gap-4">
                                     <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white h-12 px-8 text-base">
@@ -110,6 +110,62 @@ export default function Landing() {
                                 <p className="text-slate-600 leading-relaxed">{feature.description}</p>
                             </motion.div>
                         ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* HAI-DEF Deep Dive Section */}
+            <section className="py-24 bg-teal-900 text-white overflow-hidden relative">
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=2000&auto=format&fit=crop')] opacity-10 bg-cover bg-center mix-blend-overlay" />
+                <div className="container mx-auto px-4 relative z-10">
+                    <div className="text-center max-w-3xl mx-auto mb-16">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-teal-800/50 border border-teal-700 px-4 py-1.5 text-sm font-medium text-teal-200 mb-6">
+                            <Brain className="h-4 w-4" />
+                            Core Technology Focus
+                        </div>
+                        <h2 className="text-3xl font-bold mb-6 sm:text-4xl text-white">The HAI-DEF Advantage</h2>
+                        <p className="text-lg text-teal-100 leading-relaxed">
+                            Standard AI models only see pixels. <strong className="text-white">PathoAssist sees the whole patient.</strong> <br />
+                            By leveraging the <span className="text-teal-300">MedGemma-4B HAI-DEF model</span>, we move beyond simple classification to true cognitive reasoning.
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8 items-center max-w-6xl mx-auto">
+                        {/* Step 1: Visual */}
+                        <motion.div
+                            whileHover={{ y: -5 }}
+                            className="bg-white/5 backdrop-blur-sm border border-white/10 p-8 rounded-2xl relative"
+                        >
+                            <div className="bg-blue-500/20 w-12 h-12 rounded-xl flex items-center justify-center mb-6">
+                                <Microscope className="h-6 w-6 text-blue-300" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-3">1. Visual Analysis</h3>
+                            <p className="text-teal-100/80 text-sm leading-relaxed">
+                                The vision encoder scans gigapixel slides at 40x magnification, identifying subtle architectural patterns, nuclear atypia, and mitotic figures that standard CNNs might miss.
+                            </p>
+                        </motion.div>
+
+                        {/* Step 2: Synthesis (Center) */}
+                        <div className="hidden md:flex justify-center text-teal-500">
+                            <ArrowRight className="h-8 w-8" />
+                        </div>
+
+                        {/* Step 3: Fusion */}
+                        <motion.div
+                            whileHover={{ y: -5 }}
+                            className="bg-gradient-to-br from-teal-600/20 to-teal-900/40 backdrop-blur-md border border-teal-500/30 p-8 rounded-2xl relative md:col-span-1 shadow-2xl"
+                        >
+                            <div className="absolute -top-3 -right-3 bg-teal-500 text-xs font-bold px-3 py-1 rounded-full text-white shadow-lg">
+                                HAI-DEF FUSION
+                            </div>
+                            <div className="bg-teal-500/20 w-12 h-12 rounded-xl flex items-center justify-center mb-6">
+                                <Brain className="h-6 w-6 text-teal-300" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-3">2. Multimodal Synthesis</h3>
+                            <p className="text-teal-100/80 text-sm leading-relaxed">
+                                This is where magic happens. The model fuses the <strong>Visual Features</strong> with the <strong>Patient's Clinical History</strong> (age, symptoms, prior history) to produce a context-aware diagnosis, ruling out conditions that don't match the clinical picture.
+                            </p>
+                        </motion.div>
                     </div>
                 </div>
             </section>

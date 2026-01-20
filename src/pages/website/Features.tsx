@@ -72,12 +72,12 @@ export default function Features() {
                             <div className="bg-indigo-100 p-3 rounded-2xl inline-flex items-center justify-center mb-6 shadow-sm">
                                 <Shield className="h-8 w-8 text-indigo-600" />
                             </div>
-                            <h2 className="text-3xl font-bold text-slate-900 mb-6">Professional Reporting</h2>
+                            <h2 className="text-3xl font-bold text-slate-900 mb-6">Multimodal Clinical Synthesis</h2>
                             <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                                Generate tailored pathology reports that mimic professional standards. The AI analyzes visual features and combines them with clinical context to produce detailed summaries, differential diagnoses, and confidence-scored findings.
+                                PathoAssist helps you leverage the full potential of HAI-DEF models by fusing high-resolution visual data with patient clinical history. The AI doesn't just "see" the image; it reasons about the findings in context, providing evidence-based assessments that mimic expert cognitive processes.
                             </p>
                             <ul className="space-y-4">
-                                {['Detailed narrative summaries', 'Confidence scoring per finding', 'PDF Export ready'].map(item => (
+                                {['Cross-references visual & clinical data', 'Evidence-based reasoning for & against diagnoses', 'Confidence scoring with justification'].map(item => (
                                     <li key={item} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
                                         <div className="bg-green-100 rounded-full p-1">
                                             <Check className="h-4 w-4 text-green-600" />
