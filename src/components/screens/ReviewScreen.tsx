@@ -21,6 +21,7 @@ interface ReportField {
   label: string;
   value: string;
   confidence: ConfidenceLevel;
+  visual_evidence?: string | null;
 }
 
 export function ReviewScreen({ onProceed }: ReviewScreenProps) {
@@ -111,6 +112,7 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
         label: finding.category,
         value: finding.finding,
         confidence: finding.confidence,
+        visual_evidence: finding.visual_evidence,
       });
     });
 
@@ -267,7 +269,15 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
                       className="flex items-center justify-between group cursor-pointer"
                       onClick={() => setEditingField(field.id)}
                     >
-                      <p className="font-medium">{field.value}</p>
+                      <div className="space-y-1">
+                        <p className="font-medium">{field.value}</p>
+                        {('visual_evidence' in field) && field.visual_evidence && (
+                          <div className="flex items-center gap-1.5 text-xs text-teal-600 bg-teal-50 px-2 py-1 rounded-md border border-teal-100">
+                            <span className="font-bold">Evidence:</span>
+                            <span>{field.visual_evidence}</span>
+                          </div>
+                        )}
+                      </div>
                       <Edit3 className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   )}

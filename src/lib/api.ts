@@ -17,7 +17,7 @@ import type {
   HealthResponse,
 } from '@/types/api';
 
-const API_BASE_URL = 'http://127.0.0.1:8007';
+export const API_BASE_URL = 'http://127.0.0.1:8007';
 
 /**
  * Get thumbnail URL for a case (direct URL, not API call)

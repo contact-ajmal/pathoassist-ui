@@ -167,6 +167,89 @@ export default function Features() {
                 </div>
             </section>
 
+            {/* Feature 2.75: Trust & Explainability (Visual Grounding) */}
+            <section className="py-24 bg-slate-900 text-white">
+                <div className="container mx-auto px-4">
+                    <div className="flex flex-col lg:flex-row-reverse items-center gap-16">
+                        <div className="lg:w-1/2">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.6 }}
+                            >
+                                <div className="p-6 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl relative overflow-hidden">
+                                    {/* Mock UI for Visual Grounding */}
+                                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                                        <Shield className="w-32 h-32" />
+                                    </div>
+
+                                    <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+                                        <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                                        Evidence Verification
+                                    </h3>
+
+                                    <div className="space-y-3">
+                                        <div className="p-3 bg-slate-700/50 rounded-lg border border-slate-600">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className="text-sm font-medium text-slate-200">Mitotic Activity</span>
+                                                <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">Review Needed</span>
+                                            </div>
+                                            <p className="text-sm text-slate-400 mb-2">High index observed in upper quadrant.</p>
+
+                                            {/* EVIDENCE BADGE */}
+                                            <div className="flex items-center gap-2 text-xs bg-teal-500/10 border border-teal-500/30 rounded px-2 py-1.5 text-teal-300 w-fit">
+                                                <Server className="w-3 h-3" />
+                                                <span className="font-mono font-bold">Evidence:</span>
+                                                <span>Atypical figures in ROI #12</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-3 bg-slate-700/50 rounded-lg border border-slate-600 opacity-60">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <span className="text-sm font-medium text-slate-200">Necrosis</span>
+                                                <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded border border-green-500/30">Confident</span>
+                                            </div>
+                                            <p className="text-sm text-slate-400">Not observed in current field.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 pt-4 border-t border-slate-700 flex justify-between items-center">
+                                        <span className="text-xs text-slate-500">Confidence Score</span>
+                                        <span className="font-mono text-xl font-bold text-teal-400">88.4%</span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+
+                        <div className="lg:w-1/2">
+                            <div className="bg-indigo-900/50 p-3 rounded-2xl inline-flex items-center justify-center mb-6 border border-indigo-500/30">
+                                <Shield className="h-8 w-8 text-indigo-400" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-white mb-6">Trust & Explainability</h2>
+                            <p className="text-lg text-slate-300 mb-8 leading-relaxed">
+                                A black box has no place in a clinic. PathoAssist introduces <strong>Visual Grounding</strong> to AI pathology.
+                                Every finding is backed by specific "Evidence Citations"—telling you exactly <em>where</em> in the image the AI is looking (e.g., "ROI #3", "Lower Left Quadrant") so you can verify the results instantly.
+                            </p>
+                            <ul className="space-y-4">
+                                {[
+                                    'Specific ROI citations for every finding',
+                                    'Visual confirmation of AI attention',
+                                    'Reduced hallucination risk via forced grounding'
+                                ].map(item => (
+                                    <li key={item} className="flex items-center gap-3">
+                                        <div className="bg-indigo-500/20 rounded-full p-1">
+                                            <Check className="h-4 w-4 text-indigo-400" />
+                                        </div>
+                                        <span className="text-slate-300 font-medium">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Feature 3: Offline & Privacy */}
             <section className="py-24 bg-white border-t border-slate-100">
                 <div className="container mx-auto px-4">

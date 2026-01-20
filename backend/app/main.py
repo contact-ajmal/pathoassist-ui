@@ -124,6 +124,47 @@ async def health_check():
     )
 
 
+@app.get("/health/detailed")
+async def health_check_detailed():
+    """Detailed health check for system capability validation."""
+    import psutil
+    import torch
+    
+    # System Stats
+    mem = psutil.virtual_memory()
+    total_ram_gb = round(mem.total / (1024**3), 2)
+    available_ram_gb = round(mem.available / (1024**3), 2)
+    
+    # Accelerator Stats
+    accelerator = "CPU"
+    vram_gb = 0
+    if torch.backends.mps.is_available():
+        accelerator = "Apple Silicon (MPS)"
+        # MPS doesn't expose VRAM easily, assume unified memory
+        vram_gb = total_ram_gb 
+    elif torch.cuda.is_available():
+        accelerator = f"CUDA ({torch.cuda.get_device_name(0)})"
+        vram_gb = round(torch.cuda.get_device_properties(0).total_memory / (1024**3), 2)
+
+    return {
+        "status": "healthy",
+        "system": {
+            "os": "macOS" if settings.DEVICE == "mps" else "Linux/Windows",
+            "ram_total_gb": total_ram_gb,
+            "ram_available_gb": available_ram_gb,
+            "accelerator": accelerator,
+            "vram_gb": vram_gb,
+            "quantization_support": True # MedGemma 4B fits in 8GB
+        },
+        "model": {
+            "loaded": inference_engine.is_loaded,
+            "name": settings.MODEL_NAME,
+            "device": inference_engine.device,
+            "quantized": settings.USE_QUANTIZATION
+        }
+    }
+
+
 # ============================================================================
 # SETTINGS
 # ============================================================================

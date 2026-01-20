@@ -146,6 +146,7 @@ class PathologyFinding(BaseModel):
     confidence: ConfidenceLevel
     confidence_score: float = Field(ge=0.0, le=1.0)
     details: Optional[str] = None
+    visual_evidence: Optional[str] = None  # Reference to relevant visual features/ROI
 
 
 class DifferentialDiagnosis(BaseModel):

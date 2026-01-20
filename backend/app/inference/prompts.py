@@ -52,12 +52,13 @@ Format your response as follows:
 TISSUE TYPE: [type] (Confidence: [level])
 
 MULTIMODAL SYNTHESIS:
-[Explain the connection between the image features and clinical history. E.g., "The presence of cribriform structures visually correlates with the patient's history of...", or "The lack of atypia visually contradicts the clinical suspicion of..."]
+[Explain connection between image features and clinical history.]
 
 FINDINGS:
 1. [Category]: [Detailed Finding]
    Confidence: [HIGH/MEDIUM/LOW]
-   Details: [Visual evidence]
+   Evidence: [Specific visual feature, e.g., "Enlarged nuclei in ROI #3", "Cribriform architecture"]
+   Details: [Elaboration]
 
 DIFFERENTIAL DIAGNOSIS:
 - [Condition A]: [Likelihood] - [Reasoning based on image+text]
@@ -73,7 +74,8 @@ CONFIDENCE ASSESSMENT:
 Overall analysis confidence: [score 0-1]
 Limitations: [Specific limitations]"""
 
-# Template for simple description
+
+
 DESCRIPTION_TEMPLATE = """Provide a brief clinical description of the following pathology observations:
 
 {observations}
@@ -372,27 +374,47 @@ class PromptBuilder:
 
         # Extract findings with flexible patterns
         finding_patterns = [
-            r"(\d+\.)\s*\[?([^\]:\n]+)\]?[:\s]+([^\n]+)",  # "1. [Category]: Finding"
-            r"(?:Finding|Observation)\s*\d*[:\s]+([^\n]+)",  # "Finding: text"
-            r"[-•]\s*([A-Z][^\n]{10,})",  # Bullet points with substantial text
+            r"(\d+\.)\s*\[?([^\]:\n]+)\]?[:\s]+([^\n]+)(?:\n\s*Confidence:[^\n]+)?(?:\n\s*Evidence:\s*([^\n]+))?",  # Capture Evidence group
         ]
         
         for pattern in finding_patterns:
             matches = re.findall(pattern, text, re.IGNORECASE)
             for match in matches:
-                if isinstance(match, tuple):
-                    finding_text = ' '.join(match).strip()
-                else:
-                    finding_text = match.strip()
-                
-                if len(finding_text) > 10 and finding_text.lower() not in ['n/a', 'none', 'differential diagnosis']:
+                # Handle varying group counts depending on regex
+                if len(match) >= 3 and isinstance(match, tuple):
+                     # Standard match: Group 1=Num, 2=Cat, 3=Text, 4=Evidence (Optional)
+                    category = match[1].strip()
+                    finding_text = match[2].strip()
+                    evidence = match[3].strip() if len(match) > 3 and match[3] else None
+                    
+                    if len(finding_text) > 5:
+                        result["findings"].append({
+                            "text": finding_text,
+                            "category": category, 
+                            "confidence": "MEDIUM",
+                            "visual_evidence": evidence 
+                        })
+
+            if result["findings"]:
+                break
+        
+        # Fallback finding extraction if regex failed or used different format
+        if not result["findings"]:
+             # Try simpler pattern without evidence capture
+             simple_pattern = r"(?:Finding|Observation)\s*\d*[:\s]+([^\n]+)"
+             matches = re.findall(simple_pattern, text, re.IGNORECASE)
+             for m in matches:
+                 if isinstance(m, tuple):
+                     finding_text = "".join(m).strip()
+                 else:
+                    finding_text = m.strip()
+
+                 if len(finding_text) > 10:
                     result["findings"].append({
                         "text": finding_text,
                         "confidence": "MEDIUM"
                     })
-            if result["findings"]:
-                break
-        
+                    
         # If still no findings, extract key sentences that look like findings
         if not result["findings"]:
             sentences = text.split('.')

@@ -111,6 +111,7 @@ export interface PathologyFinding {
   confidence: ConfidenceLevel;
   confidence_score: number;
   details: string | null;
+  visual_evidence?: string | null;
 }
 
 export interface DifferentialDiagnosis {

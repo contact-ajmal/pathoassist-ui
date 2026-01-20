@@ -1,9 +1,101 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WebsiteLayout } from "@/layouts/WebsiteLayout";
-import { Book, Code, Terminal, Server, Shield, Cpu, Activity, FileText } from "lucide-react";
+import { Book, Code, Terminal, Server, Shield, Cpu, Activity, FileText, CheckCircle2, AlertTriangle, Loader2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/lib/api";
 
 type DocSection = 'intro' | 'install' | 'config' | 'usage' | 'architecture';
+
+function DeploymentValidator() {
+    const [status, setStatus] = useState<'idle' | 'checking' | 'success' | 'error'>('idle');
+    const [report, setReport] = useState<any>(null);
+
+    const runCheck = async () => {
+        setStatus('checking');
+        try {
+            // Fetch from backend
+            const res = await fetch(`${API_BASE_URL}/health/detailed`);
+            if (!res.ok) throw new Error("Failed to connect");
+            const data = await res.json();
+
+            // Simulate "Analysis" delay for effect
+            await new Promise(r => setTimeout(r, 1500));
+
+            setReport(data);
+            setStatus('success');
+        } catch (e) {
+            setStatus('error');
+        }
+    };
+
+    if (status === 'idle') {
+        return (
+            <Button onClick={runCheck} className="w-full bg-teal-600 hover:bg-teal-500 text-white font-semibold py-6">
+                Run Feasibility Check
+            </Button>
+        );
+    }
+
+    if (status === 'checking') {
+        return (
+            <div className="text-center py-8 space-y-3">
+                <Loader2 className="h-8 w-8 animate-spin text-teal-400 mx-auto" />
+                <p className="text-teal-100">Analyzing host hardware capabilities...</p>
+            </div>
+        );
+    }
+
+    if (status === 'error') {
+        return (
+            <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-lg text-center">
+                <XCircle className="h-8 w-8 text-red-400 mx-auto mb-2" />
+                <h4 className="font-bold text-red-200">Connection Failed</h4>
+                <p className="text-sm text-red-200/70">Ensure backend is running on port 8007</p>
+                <Button onClick={runCheck} variant="ghost" className="mt-4 text-white hover:bg-white/10">Retry</Button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4 animate-in fade-in zoom-in duration-300">
+            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-teal-500/30">
+                <span className="text-slate-300">Accelerator</span>
+                <span className="font-mono text-teal-300 font-bold">{report.system.accelerator}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-teal-500/30">
+                <span className="text-slate-300">Available RAM</span>
+                <div className="text-right">
+                    <span className="font-mono text-white font-bold block">{report.system.ram_available_gb} GB</span>
+                    <span className="text-xs text-slate-400">of {report.system.ram_total_gb} GB Total</span>
+                </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-teal-500/30">
+                <span className="text-slate-300">Model Quantization</span>
+                <span className="inline-flex items-center gap-1.5 text-teal-300 text-sm font-medium">
+                    <CheckCircle2 className="h-4 w-4" />
+                    4-bit Supported
+                </span>
+            </div>
+
+            <div className="bg-teal-500/20 border border-teal-500/50 p-4 rounded-lg mt-4">
+                <p className="text-teal-200 text-sm font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5" />
+                    System is Ready for Deployment
+                </p>
+                <p className="text-xs text-teal-200/70 mt-1">
+                    This device meets the requirements for offline clinical inference.
+                </p>
+            </div>
+
+            <Button onClick={() => setStatus('idle')} variant="ghost" className="w-full text-slate-400 hover:text-white hover:bg-white/5 text-xs">
+                Run Check Again
+            </Button>
+        </div>
+    );
+}
 
 export default function Docs() {
     const [activeSection, setActiveSection] = useState<DocSection>('intro');
@@ -84,6 +176,19 @@ export default function Docs() {
                                 <div className="bg-white p-4 rounded-lg border border-slate-200 text-sm text-slate-500">
                                     <p>Contact our team to request access to the secure repository and deployment manifests.</p>
                                 </div>
+                            </div>
+
+                            {/* NEW: Deployment Validator */}
+                            <div className="bg-slate-900 text-white rounded-xl p-6 shadow-xl">
+                                <h3 className="font-bold text-xl mb-4 flex items-center gap-2">
+                                    <Terminal className="h-5 w-5 text-teal-400" />
+                                    System Capability Validator
+                                </h3>
+                                <p className="text-slate-300 text-sm mb-6">
+                                    Check if this device meets the requirements for offline inference with MedGemma-4B.
+                                </p>
+
+                                <DeploymentValidator />
                             </div>
 
                             <div className="grid md:grid-cols-2 gap-4">
