@@ -49,6 +49,21 @@ export default function Features() {
                                     </div>
                                 ))}
                             </div>
+
+                            <div className="mt-8 p-4 bg-teal-50 border border-teal-100 rounded-xl flex items-start gap-3">
+                                <div className="bg-teal-100 p-1.5 rounded-full shrink-0">
+                                    <Check className="h-4 w-4 text-teal-700" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-teal-900">Built on Proven Technology</p>
+                                    <p className="text-sm text-teal-700 mt-1 leading-relaxed">
+                                        PathoAssist extends the capabilities of Google's HAI-DEF architecture.
+                                        <a href="https://huggingface.co/spaces/google/path-foundation-demo" target="_blank" rel="noopener noreferrer" className="underline font-bold ml-1 hover:text-teal-900">
+                                            Try Google's Official Path Foundation Demo
+                                        </a> to verify the model's baseline reliability.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                         <div className="lg:w-1/2">
                             <motion.div
