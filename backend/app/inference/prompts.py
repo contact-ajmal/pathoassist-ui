@@ -20,55 +20,58 @@ CRITICAL GUIDELINES:
 7. Provide confidence scores for all observations"""
 
 # Template for pathology analysis
-PATHOLOGY_ANALYSIS_TEMPLATE = """Analyze the following histopathology slide information:
+PATHOLOGY_ANALYSIS_TEMPLATE = """Analyze the following histopathology slide information using multimodal clinical reasoning:
 
 SLIDE CONTEXT:
 - Number of regions analyzed: {num_patches}
 - Tissue characteristics: {tissue_summary}
 
-CLINICAL CONTEXT (IMPORTANT - Integrate into analysis):
+CLINICAL CONTEXT (CRITICAL FOR HAI-DEF ANALYSIS):
 {clinical_context}
 
 ANALYSIS REQUEST:
-Provide a **DETAILED and COMPREHENSIVE** pathology report. Do not be brief. Expand on all observations.
+Perform a deep multimodal analysis. You must synthesize the VISUAL evidence (from the slide) with the TEXTUAL evidence (from clinical history) to provide a comprehensive diagnostic assessment.
 
-1. **Tissue Type Classification**: Detailed description of the tissue architecture and origin.
+1. **Multimodal Synthesis** (The "Reasoning" Step):
+   - Explicitly connect specific visual features (e.g., "high nuclear-to-cytoplasmic ratio") with the clinical history (e.g., "patient age", "prior biopsy").
+   - Explain *why* the visual features support or refute the clinical suspicion.
+
 2. **Microscopic Description**:
-   - Cellular features (nuclei size, shape, chromatin pattern, nucleoli)
-   - Cytoplasmic features
-   - Mitotic activity (count and appearance)
-   - Stroma and background adjustments
-3. **Notable Features**:
-   - Detailed assessment of inflammation (type and severity)
-   - Presence of necrosis or apoptosis
-   - Vascular invasion or other architectural findings
-4. **Summary & Conclusion**: A cohesive narrative summarizing the case.
+   - Cellular architecture and cytology
+   - Mitotic activity and atypia
+   - Stroma and inflammatory response
 
-For each finding, provide:
-- **Observation**: Comprehensive description of what is seen.
-- **Confidence**: (HIGH/MEDIUM/LOW) with justification.
-- **Significance**: Why this feature matters clinically.
+3. **Differential Diagnosis & Reasoning**:
+   - List potential diagnoses.
+   - For each, provide evidence FOR and AGAINST based on the fused data.
+
+4. **Summary**: A professional pathology conclusion.
 
 Format your response as follows:
 
 TISSUE TYPE: [type] (Confidence: [level])
 
-FINDINGS:
-1. [Category]: [Detailed Finding Description]
-   Confidence: [HIGH/MEDIUM/LOW]
-   Details: [Extended explanation of appearance and significance]
+MULTIMODAL SYNTHESIS:
+[Explain the connection between the image features and clinical history. E.g., "The presence of cribriform structures visually correlates with the patient's history of...", or "The lack of atypia visually contradicts the clinical suspicion of..."]
 
-... [Continue for all features]
+FINDINGS:
+1. [Category]: [Detailed Finding]
+   Confidence: [HIGH/MEDIUM/LOW]
+   Details: [Visual evidence]
+
+DIFFERENTIAL DIAGNOSIS:
+- [Condition A]: [Likelihood] - [Reasoning based on image+text]
+- [Condition B]: [Likelihood] - [Reasoning]
 
 SUMMARY:
-[Provide a formal, highly detailed pathology case summary. Integrate the clinical context (if valid) with the microscopic findings. Discuss the differential diagnosis if applicable based on the visual features. This summary should read like a professional pathologist's final report comment, avoiding generic fluff. Focus on the biological significance of the findings.]
+[Final professional assessment]
 
 RECOMMENDATIONS:
-- [Specific tests, stains, or clinical correlations recommended]
+- [Next steps]
 
 CONFIDENCE ASSESSMENT:
 Overall analysis confidence: [score 0-1]
-Limitations: [Specific limitations of this analysis]"""
+Limitations: [Specific limitations]"""
 
 # Template for simple description
 DESCRIPTION_TEMPLATE = """Provide a brief clinical description of the following pathology observations:
