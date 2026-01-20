@@ -47,6 +47,9 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                         <Link to="/impact" className="hover:text-teal-600 transition-colors">
                             Global Impact
                         </Link>
+                        <Link to="/tech-stack" className="hover:text-teal-600 transition-colors">
+                            Tech Stack
+                        </Link>
                     </div>
 
                     <div className="flex items-center gap-4">

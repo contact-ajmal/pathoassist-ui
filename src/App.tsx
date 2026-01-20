@@ -10,6 +10,7 @@ import Features from "./pages/website/Features";
 import Docs from "./pages/website/Docs";
 import About from "./pages/website/About";
 import Impact from "./pages/website/Impact";
+import TechStack from "./pages/website/TechStack";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/docs" element={<Docs />} />
             <Route path="/about" element={<About />} />
             <Route path="/impact" element={<Impact />} />
+            <Route path="/tech-stack" element={<TechStack />} />
 
             {/* Application Routes - Lazy Loaded */}
             <Route
