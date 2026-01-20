@@ -1,0 +1,72 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.10.18, pytest-7.4.4, pluggy-1.6.0 -- /Users/zaza/Documents/Ajmal-coding-Projects/pathoassist-ui/backend/venv/bin/python3.10
+cachedir: .pytest_cache
+rootdir: /Users/zaza/Documents/Ajmal-coding-Projects/pathoassist-ui
+plugins: anyio-4.12.1, asyncio-0.23.3
+asyncio: mode=strict
+collecting ... collected 4 items
+
+backend/tests/test_inference.py::test_prompt_builder_initialization PASSED [ 25%]
+backend/tests/test_inference.py::test_prompt_with_clinical_context FAILED [ 50%]
+backend/tests/test_inference.py::test_prompt_without_clinical_context FAILED [ 75%]
+backend/tests/test_inference.py::test_safety_check PASSED                [100%]
+
+=================================== FAILURES ===================================
+______________________ test_prompt_with_clinical_context _______________________
+
+    def test_prompt_with_clinical_context():
+        """Test prompt generation with clinical context."""
+        builder = PromptBuilder()
+>       patches = [PatchInfo(patch_id="p1", x=0, y=0, width=256, height=256, is_background=False, tissue_ratio=0.9, variance_score=0.5)]
+E       pydantic_core._pydantic_core.ValidationError: 3 validation errors for PatchInfo
+E       level
+E         Field required [type=missing, input_value={'patch_id': 'p1', 'x': 0..., 'variance_score': 0.5}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.5/v/missing
+E       magnification
+E         Field required [type=missing, input_value={'patch_id': 'p1', 'x': 0..., 'variance_score': 0.5}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.5/v/missing
+E       coordinates
+E         Field required [type=missing, input_value={'patch_id': 'p1', 'x': 0..., 'variance_score': 0.5}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.5/v/missing
+
+backend/tests/test_inference.py:14: ValidationError
+_____________________ test_prompt_without_clinical_context _____________________
+
+    def test_prompt_without_clinical_context():
+        """Test prompt generation without clinical context."""
+        builder = PromptBuilder()
+>       patches = [PatchInfo(patch_id="p1", x=0, y=0, width=256, height=256, is_background=False, tissue_ratio=0.9, variance_score=0.5)]
+E       pydantic_core._pydantic_core.ValidationError: 3 validation errors for PatchInfo
+E       level
+E         Field required [type=missing, input_value={'patch_id': 'p1', 'x': 0..., 'variance_score': 0.5}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.5/v/missing
+E       magnification
+E         Field required [type=missing, input_value={'patch_id': 'p1', 'x': 0..., 'variance_score': 0.5}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.5/v/missing
+E       coordinates
+E         Field required [type=missing, input_value={'patch_id': 'p1', 'x': 0..., 'variance_score': 0.5}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.5/v/missing
+
+backend/tests/test_inference.py:26: ValidationError
+=============================== warnings summary ===============================
+backend/venv/lib/python3.10/site-packages/pydantic/_internal/_config.py:271
+  /Users/zaza/Documents/Ajmal-coding-Projects/pathoassist-ui/backend/venv/lib/python3.10/site-packages/pydantic/_internal/_config.py:271: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.5/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+backend/venv/lib/python3.10/site-packages/pydantic/_internal/_fields.py:149
+  /Users/zaza/Documents/Ajmal-coding-Projects/pathoassist-ui/backend/venv/lib/python3.10/site-packages/pydantic/_internal/_fields.py:149: UserWarning: Field "model_loaded" has conflict with protected namespace "model_".
+  
+  You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ()`.
+    warnings.warn(
+
+backend/venv/lib/python3.10/site-packages/pydantic/_internal/_fields.py:149
+  /Users/zaza/Documents/Ajmal-coding-Projects/pathoassist-ui/backend/venv/lib/python3.10/site-packages/pydantic/_internal/_fields.py:149: UserWarning: Field "model_name" has conflict with protected namespace "model_".
+  
+  You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ()`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED backend/tests/test_inference.py::test_prompt_with_clinical_context - p...
+FAILED backend/tests/test_inference.py::test_prompt_without_clinical_context
+=================== 2 failed, 2 passed, 3 warnings in 4.46s ====================

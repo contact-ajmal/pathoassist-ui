@@ -7,9 +7,13 @@ export default function About() {
             <div className="container mx-auto px-4 py-24">
                 <div className="max-w-3xl mx-auto text-center mb-16">
                     <h1 className="text-4xl font-bold text-slate-900 mb-6">About PathoAssist</h1>
+                    <p className="text-lg text-slate-600 leading-relaxed mb-6">
+                        PathoAssist is a <strong className="text-teal-700">research initiative</strong> developed for the Google MedGemma Impact Challenge.
+                        Our mission is to democratize access to advanced diagnostic tools by bringing state-of-the-art AI directly to the edge.
+                    </p>
                     <p className="text-lg text-slate-600 leading-relaxed">
-                        PathoAssist is an open-source initiative dedicated to democratizing access to advanced AI tools in pathology.
-                        Our mission is to bridge the gap between cutting-edge computer vision research and clinical workflows.
+                        By optimizing the <strong>MedGemma-4B</strong> model for local consumer hardware, we empower clinics in rural and resource-constrained
+                        areas to perform high-quality pathology analysis without relying on expensive cloud infrastructure or consistent internet connectivity.
                     </p>
                 </div>
 
@@ -25,8 +29,8 @@ export default function About() {
                         <div className="bg-blue-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
                             <Code className="h-8 w-8 text-blue-600" />
                         </div>
-                        <h3 className="text-xl font-bold mb-3">Open Source</h3>
-                        <p className="text-slate-600">Built on modern tech stacks (React, Python, PyTorch) and completely transparent. Contribute on GitHub.</p>
+                        <h3 className="text-xl font-bold mb-3">Privacy Focused</h3>
+                        <p className="text-slate-600">Built on secure, local-first architecture (MedGemma, PyTorch) ensuring patient data stays within your infrastructure.</p>
                     </div>
                     <div className="text-center">
                         <div className="bg-rose-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">

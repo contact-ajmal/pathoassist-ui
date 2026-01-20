@@ -10,6 +10,9 @@
     --background: 210 20% 98%;
     --foreground: 215 25% 15%;
 
+    /* Enhanced Gradients */
+    --gradient-hero: linear-gradient(135deg, #f0fdfa 0%, #f1f5f9 100%);
+
     /* Card surfaces */
     --card: 0 0% 100%;
     --card-foreground: 215 25% 15%;
@@ -145,7 +148,12 @@
   }
 
   /* Medical-grade typography */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-semibold tracking-tight;
   }
 
@@ -156,6 +164,7 @@
 }
 
 @layer components {
+
   /* Status badge styles */
   .status-badge {
     @apply inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full;
@@ -281,10 +290,18 @@
 }
 
 @layer utilities {
+
   /* Animation for analysis */
   @keyframes pulse-subtle {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.7;
+    }
   }
 
   .animate-pulse-subtle {
@@ -295,4 +312,26 @@
   .transition-medical {
     @apply transition-all duration-200 ease-in-out;
   }
+
+  .glass {
+    @apply bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg;
+  }
+
+  .dark .glass {
+    @apply bg-black/20 backdrop-blur-lg border border-white/10 shadow-lg;
+  }
+}
+
+@keyframes scan {
+  from {
+    top: 0%;
+  }
+
+  to {
+    top: 100%;
+  }
+}
+
+.animate-scan {
+  animation: scan 2s linear infinite;
 }

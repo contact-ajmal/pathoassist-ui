@@ -10,6 +10,7 @@ import type {
   AnalysisResult,
   StructuredReport,
 } from '@/types/api';
+import { PatientRecord } from '@/types/patient';
 
 interface CaseState {
   caseId: string | null;
@@ -20,6 +21,8 @@ interface CaseState {
   roiResult: ROIResult | null;
   analysisResult: AnalysisResult | null;
   report: StructuredReport | null;
+  patientData: PatientRecord | null;
+  clinicalContext: string | null;
 }
 
 interface CaseContextType extends CaseState {
@@ -32,6 +35,8 @@ interface CaseContextType extends CaseState {
   setRoiResult: (result: ROIResult) => void;
   setAnalysisResult: (result: AnalysisResult) => void;
   setReport: (report: StructuredReport) => void;
+  setPatientData: (patient: PatientRecord | null) => void;
+  setClinicalContext: (context: string | null) => void;
   resetCase: () => void;
 }
 
@@ -44,6 +49,8 @@ const initialState: CaseState = {
   roiResult: null,
   analysisResult: null,
   report: null,
+  patientData: null,
+  clinicalContext: null,
 };
 
 const CaseContext = createContext<CaseContextType | undefined>(undefined);
@@ -83,6 +90,14 @@ export function CaseProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, report }));
   }, []);
 
+  const setPatientData = useCallback((patientData: PatientRecord | null) => {
+    setState((prev) => ({ ...prev, patientData }));
+  }, []);
+
+  const setClinicalContext = useCallback((clinicalContext: string | null) => {
+    setState((prev) => ({ ...prev, clinicalContext }));
+  }, []);
+
   const resetCase = useCallback(() => {
     setState(initialState);
   }, []);
@@ -99,6 +114,8 @@ export function CaseProvider({ children }: { children: React.ReactNode }) {
         setRoiResult,
         setAnalysisResult,
         setReport,
+        setPatientData,
+        setClinicalContext,
         resetCase,
       }}
     >

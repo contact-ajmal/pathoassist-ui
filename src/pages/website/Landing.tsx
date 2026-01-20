@@ -48,11 +48,6 @@ export default function Landing() {
                                 </p>
                                 <div className="mt-8 flex gap-4">
                                     <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white h-12 px-8 text-base">
-                                        <Link to="/app" className="flex items-center gap-2">
-                                            Get Started <ArrowRight className="h-5 w-5" />
-                                        </Link>
-                                    </Button>
-                                    <Button size="lg" variant="outline" className="h-12 px-8 text-base text-slate-700 hover:bg-slate-50">
                                         <Link to="/docs">View Documentation</Link>
                                     </Button>
                                 </div>
@@ -67,9 +62,9 @@ export default function Landing() {
                                 className="relative rounded-2xl shadow-2xl border border-slate-200 bg-white p-2"
                             >
                                 <img
-                                    src="/screen_report.png"
-                                    alt="PathoAssist Dashboard"
-                                    className="rounded-xl w-full h-auto"
+                                    src="/demo_video.webp"
+                                    alt="PathoAssist Application Demo"
+                                    className="rounded-xl w-full h-auto shadow-2xl"
                                 />
                                 <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-xl shadow-xl border border-slate-100 max-w-xs">
                                     <div className="flex items-start gap-3">

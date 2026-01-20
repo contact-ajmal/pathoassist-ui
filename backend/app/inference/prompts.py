@@ -25,6 +25,8 @@ PATHOLOGY_ANALYSIS_TEMPLATE = """Analyze the following histopathology slide info
 SLIDE CONTEXT:
 - Number of regions analyzed: {num_patches}
 - Tissue characteristics: {tissue_summary}
+
+CLINICAL CONTEXT (IMPORTANT - Integrate into analysis):
 {clinical_context}
 
 ANALYSIS REQUEST:
@@ -149,7 +151,9 @@ class PromptBuilder:
         # Format clinical context
         clinical_section = ""
         if clinical_context:
-            clinical_section = f"\nCLINICAL CONTEXT:\n{clinical_context}\n"
+            clinical_section = f"Patient Data & History:\n{clinical_context}\n\n(Use this patient history to inform your differential diagnosis and risk assessment)"
+        else:
+            clinical_section = "No specific clinical history provided. Analyze based on morphology only."
 
         # Determine template to use
         # If template_content is provided, use it. Otherwise fallback to default.

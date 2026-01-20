@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { 
-  User, UserPlus, Network, Search, Edit2, Trash2, 
-  Phone, Mail, Calendar, Droplet, AlertTriangle, 
+import {
+  User, UserPlus, Network, Search, Edit2, Trash2,
+  Phone, Mail, Calendar, Droplet, AlertTriangle,
   Stethoscope, Shield, FileText, MoreVertical, X,
   ChevronRight, Clock
 } from 'lucide-react';
@@ -25,6 +25,7 @@ import { PatientRecord } from '@/types/patient';
 import { SystemConnectionModal } from './SystemConnectionModal';
 import { ManualPatientEntry } from './ManualPatientEntry';
 import { toast } from 'sonner';
+import { useCase } from '@/contexts/CaseContext';
 
 interface PatientManagementModalProps {
   open: boolean;
@@ -74,11 +75,11 @@ const mockPatients: PatientRecord[] = [
   },
 ];
 
-export function PatientManagementModal({ 
-  open, 
-  onOpenChange, 
+export function PatientManagementModal({
+  open,
+  onOpenChange,
   onPatientSelect,
-  selectedPatient 
+  selectedPatient
 }: PatientManagementModalProps) {
   const [patients, setPatients] = useState<PatientRecord[]>(mockPatients);
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,8 +88,9 @@ export function PatientManagementModal({
   const [showSystemConnection, setShowSystemConnection] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [editingPatient, setEditingPatient] = useState<PatientRecord | null>(null);
+  const { setPatientData, setClinicalContext } = useCase();
 
-  const filteredPatients = patients.filter(p => 
+  const filteredPatients = patients.filter(p =>
     p.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.mrn.toLowerCase().includes(searchQuery.toLowerCase())
@@ -101,6 +103,13 @@ export function PatientManagementModal({
 
   const handleSelectPatient = (patient: PatientRecord) => {
     onPatientSelect(patient);
+    setPatientData(patient);
+    // Auto-populate clinical context from patient history/notes
+    const context = `Patient: ${patient.firstName} ${patient.lastName} (${patient.gender}, ${calculateAge(patient.dateOfBirth)}yo). 
+Medical History: ${patient.medicalHistory.join(', ')}. 
+Notes: ${patient.clinicalNotes || 'None'}.`;
+    setClinicalContext(context);
+
     toast.success(`Selected patient: ${patient.firstName} ${patient.lastName}`);
     onOpenChange(false);
   };
@@ -216,8 +225,8 @@ export function PatientManagementModal({
                     </div>
                   ) : (
                     filteredPatients.map((patient) => (
-                      <Card 
-                        key={patient.id} 
+                      <Card
+                        key={patient.id}
                         className={cn(
                           'cursor-pointer transition-all hover:shadow-md',
                           selectedPatient?.id === patient.id && 'ring-2 ring-primary'
@@ -269,8 +278,8 @@ export function PatientManagementModal({
 
                             {/* Actions */}
                             <div className="flex items-center gap-2">
-                              <Button 
-                                variant="default" 
+                              <Button
+                                variant="default"
                                 size="sm"
                                 onClick={(e) => { e.stopPropagation(); handleSelectPatient(patient); }}
                               >
@@ -291,7 +300,7 @@ export function PatientManagementModal({
                                     <Edit2 className="w-4 h-4 mr-2" />
                                     Edit
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem 
+                                  <DropdownMenuItem
                                     className="text-destructive"
                                     onClick={(e) => { e.stopPropagation(); handleDeletePatient(patient.id); }}
                                   >

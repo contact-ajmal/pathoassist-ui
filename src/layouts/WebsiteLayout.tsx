@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Github, Play } from "lucide-react";
+import { Github, Play, Linkedin } from "lucide-react";
 
 export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
     return (
@@ -44,20 +44,8 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <a
-                            href="https://github.com/ajmalbaba/pathoassist"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-slate-400 hover:text-slate-900 transition-colors"
-                        >
-                            <Github className="h-5 w-5" />
-                        </a>
-                        <Button asChild className="bg-teal-600 hover:bg-teal-700 text-white">
-                            <Link to="/app">
-                                <Play className="mr-2 h-4 w-4" />
-                                Launch App
-                            </Link>
-                        </Button>
+
+
                     </div>
                 </div>
             </nav>
@@ -87,16 +75,22 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="text-white font-medium mb-4">Project</h4>
-                            <ul className="space-y-2 text-sm">
-                                <li><a href="https://github.com/ajmalbaba" target="_blank" className="hover:text-white transition-colors">GitHub</a></li>
-                                <li><Link to="/about" className="hover:text-white transition-colors">Team</Link></li>
-                                <li><Link to="/license" className="hover:text-white transition-colors">License</Link></li>
-                            </ul>
+                            <h4 className="text-white font-medium mb-4">Contact</h4>
+                            <p className="text-sm mb-3">
+                                Interested in a private demo? Contact me directly.
+                            </p>
+                            <a
+                                href="https://www.linkedin.com/in/ajmalnazirbaba/"
+                                target="_blank"
+                                className="flex items-center gap-2 text-teal-400 hover:text-teal-300 transition-colors text-sm"
+                            >
+                                <Linkedin className="h-4 w-4" />
+                                Connect on LinkedIn
+                            </a>
                         </div>
                     </div>
                     <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs">
-                        <p>© 2026 PathoAssist Project. Open Source.</p>
+                        <p>© 2026 PathoAssist Project. All rights reserved.</p>
                         <p>Built with React, Vite & Google MedGemma.</p>
                     </div>
                 </div>
