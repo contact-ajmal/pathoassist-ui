@@ -32,6 +32,9 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                     </div>
 
                     <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+                        <Link to="/" className="hover:text-teal-600 transition-colors">
+                            Home
+                        </Link>
                         <Link to="/features" className="hover:text-teal-600 transition-colors">
                             Features
                         </Link>
