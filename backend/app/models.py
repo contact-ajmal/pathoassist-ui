@@ -148,10 +148,19 @@ class PathologyFinding(BaseModel):
     details: Optional[str] = None
 
 
+class DifferentialDiagnosis(BaseModel):
+    """Potential diagnostic candidate with reasoning."""
+    condition: str
+    likelihood: ConfidenceLevel
+    likelihood_score: float = Field(ge=0.0, le=1.0)
+    reasoning: str  # The "Why" - connecting visual features to clinical context
+
+
 class AnalysisResult(BaseModel):
     """Result of AI analysis."""
     case_id: str
     findings: List[PathologyFinding]
+    differential_diagnosis: List[DifferentialDiagnosis] = []  # New HAI-DEF feature
     narrative_summary: str
     tissue_type: TissueType
     overall_confidence: float = Field(ge=0.0, le=1.0)

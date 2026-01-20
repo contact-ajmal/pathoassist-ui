@@ -272,6 +272,59 @@ class PromptBuilder:
         else:
             return "UNKNOWN"
 
+        return result
+
+    def _parse_differential_diagnosis(self, text: str) -> List[Dict[str, Any]]:
+        """
+        Extract differential diagnosis candidates.
+        Format: - [Condition]: [Likelihood] - [Reasoning]
+        """
+        import re
+        candidates = []
+        
+        # Look for the section
+        section_match = re.search(r"DIFFERENTIAL DIAGNOSIS:(.*?)(?=\n[A-Z]+:|$)", text, re.DOTALL | re.IGNORECASE)
+        if not section_match:
+            return []
+            
+        section_text = section_match.group(1).strip()
+        
+        # Parse lines
+        # Regex to capture: "- Condition: Likelihood - Reasoning"
+        # Handling variations like bullets, bolding, etc.
+        pattern = r"[-•*]\s*([^\:]+?)\s*:\s*([^\s-]+(?:[^\-]+)?)\s*[-–]\s*(.+)"
+        
+        for line in section_text.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+                
+            match = re.search(pattern, line)
+            if match:
+                condition = match.group(1).replace('*', '').strip()
+                likelihood_str = match.group(2).strip()
+                reasoning = match.group(3).strip()
+                
+                # Normalize likelihood
+                if 'HIGH' in likelihood_str.upper():
+                    likelihood = 'HIGH'
+                    score = 0.85
+                elif 'LOW' in likelihood_str.upper():
+                    likelihood = 'LOW'
+                    score = 0.25
+                else:
+                    likelihood = 'MEDIUM'
+                    score = 0.55
+                    
+                candidates.append({
+                    "condition": condition,
+                    "likelihood": likelihood,
+                    "likelihood_score": score,
+                    "reasoning": reasoning
+                })
+                
+        return candidates
+
     def parse_structured_output(self, text: str) -> Dict[str, Any]:
         """
         Parse structured output from model with flexible matching.
@@ -287,6 +340,7 @@ class PromptBuilder:
         result = {
             "tissue_type": None,
             "findings": [],
+            "differential_diagnosis": [],
             "summary": None,
             "recommendations": [],
             "confidence": 0.5,
@@ -331,7 +385,7 @@ class PromptBuilder:
                 else:
                     finding_text = match.strip()
                 
-                if len(finding_text) > 10 and finding_text.lower() not in ['n/a', 'none']:
+                if len(finding_text) > 10 and finding_text.lower() not in ['n/a', 'none', 'differential diagnosis']:
                     result["findings"].append({
                         "text": finding_text,
                         "confidence": "MEDIUM"
@@ -352,7 +406,10 @@ class PromptBuilder:
                     })
                     if len(result["findings"]) >= 3:
                         break
-
+        
+        # Parse Differential Diagnosis (HAI-DEF Feature)
+        result["differential_diagnosis"] = self._parse_differential_diagnosis(text)
+        
         # Extract summary with flexible patterns
         summary_patterns = [
             r"SUMMARY:\s*([^\n]+(?:\n(?![A-Z]{3,}).*)*)",

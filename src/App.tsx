@@ -9,6 +9,7 @@ import Landing from "./pages/website/Landing";
 import Features from "./pages/website/Features";
 import Docs from "./pages/website/Docs";
 import About from "./pages/website/About";
+import Impact from "./pages/website/Impact";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/features" element={<Features />} />
             <Route path="/docs" element={<Docs />} />
             <Route path="/about" element={<About />} />
+            <Route path="/impact" element={<Impact />} />
 
             {/* Application Routes - Lazy Loaded */}
             <Route

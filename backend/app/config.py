@@ -17,14 +17,7 @@ class Settings(BaseSettings):
     # Server
     HOST: str = "127.0.0.1"
     PORT: int = 8000
-    CORS_ORIGINS: list[str] = [
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
-        "http://localhost:8006",
-        "http://127.0.0.1:8006",
-        "http://localhost:8007",
-        "http://127.0.0.1:8007",
-    ]
+    CORS_ORIGINS: list[str] = ["*"]
 
     # Storage
     BASE_DIR: Path = Path(__file__).parent.parent

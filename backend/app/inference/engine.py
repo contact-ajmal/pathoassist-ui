@@ -533,11 +533,29 @@ class InferenceEngine:
                     f"({settings.CONFIDENCE_THRESHOLD}). Findings require careful expert review."
                 )
 
+            # Parse Differential Diagnosis
+            differential_diagnosis = []
+            for dd in parsed.get("differential_diagnosis", []):
+                # Import DifferentialDiagnosis model locally to avoid circular imports if any
+                from ..models import DifferentialDiagnosis, ConfidenceLevel
+                
+                # Normalize confidence to enum
+                conf_map = {"HIGH": ConfidenceLevel.HIGH, "MEDIUM": ConfidenceLevel.MEDIUM, "LOW": ConfidenceLevel.LOW}
+                likelihood = conf_map.get(dd.get("likelihood", "MEDIUM"), ConfidenceLevel.MEDIUM)
+                
+                differential_diagnosis.append(DifferentialDiagnosis(
+                    condition=dd.get("condition", "Unknown Condition"),
+                    likelihood=likelihood,
+                    likelihood_score=dd.get("likelihood_score", 0.5),
+                    reasoning=dd.get("reasoning", "No detailed reasoning provided.")
+                ))
+
             processing_time = time.time() - start_time
 
             result = AnalysisResult(
                 case_id=case_id,
                 findings=findings,
+                differential_diagnosis=differential_diagnosis,
                 narrative_summary=narrative,
                 tissue_type=tissue_type,
                 overall_confidence=overall_confidence,

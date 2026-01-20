@@ -113,9 +113,17 @@ export interface PathologyFinding {
   details: string | null;
 }
 
+export interface DifferentialDiagnosis {
+  condition: string;
+  likelihood: ConfidenceLevel;
+  likelihood_score: number;
+  reasoning: string;
+}
+
 export interface AnalysisResult {
   case_id: string;
   findings: PathologyFinding[];
+  differential_diagnosis: DifferentialDiagnosis[];
   narrative_summary: string;
   tissue_type: TissueType;
   overall_confidence: number;

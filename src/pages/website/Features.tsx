@@ -101,6 +101,72 @@ export default function Features() {
                 </div>
             </section>
 
+
+
+            {/* Feature 2.5: Differential Diagnosis Dashboard (New) */}
+            <section className="py-24 bg-white border-b border-slate-100">
+                <div className="container mx-auto px-4">
+                    <div className="flex flex-col lg:flex-row items-center gap-16">
+                        <div className="lg:w-1/2">
+                            <motion.div
+                                initial={{ opacity: 0, x: 50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.6 }}
+                            >
+                                <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl shadow-lg">
+                                    {/* Mock UI for Differential Diagnosis */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <div className="h-4 w-4 bg-teal-500 rounded-full" />
+                                            <div className="h-2 w-32 bg-slate-200 rounded" />
+                                        </div>
+                                        {[
+                                            { name: "Invasive Ductal Carcinoma", score: 92, reason: "High cellularity and nuclear variations consistent with history." },
+                                            { name: "DCIS", score: 45, reason: "Some cribriform patterns but lacks invasive features." },
+                                            { name: "Fibroadenoma", score: 12, reason: "Benign features not aligned with patient age." }
+                                        ].map((item, i) => (
+                                            <div key={i} className="p-4 bg-white border border-slate-100 rounded-xl shadow-sm">
+                                                <div className="flex justify-between mb-2">
+                                                    <span className="font-bold text-slate-800 text-sm">{item.name}</span>
+                                                    <span className="text-xs font-mono text-teal-600">{item.score}%</span>
+                                                </div>
+                                                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2">
+                                                    <div className="h-full bg-teal-500" style={{ width: `${item.score}%` }} />
+                                                </div>
+                                                <p className="text-xs text-slate-500 italic">"{item.reason}"</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                        <div className="lg:w-1/2">
+                            <div className="bg-amber-100 p-3 rounded-2xl inline-flex items-center justify-center mb-6 shadow-sm">
+                                <Zap className="h-8 w-8 text-amber-600" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-slate-900 mb-6">Interactive Reasoning Dashboard</h2>
+                            <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+                                Don't just get a label. Understand the <strong>"Why"</strong>. <br />
+                                Our new Differential Diagnosis engine provides a ranked list of potential conditions, each accompanied by an <strong>explainable AI reasoning</strong> snippet derived from the fusion of image features and clinical context.
+                            </p>
+                            <ul className="space-y-4">
+                                {[
+                                    'Ranked Differential Diagnosis candidates',
+                                    'Likelihood visualization strings',
+                                    'Transparency into model decision making'
+                                ].map(item => (
+                                    <li key={item} className="flex items-center gap-3">
+                                        <Check className="h-5 w-5 text-amber-500" />
+                                        <span className="text-slate-700 font-medium">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Feature 3: Offline & Privacy */}
             <section className="py-24 bg-white border-t border-slate-100">
                 <div className="container mx-auto px-4">
@@ -142,6 +208,6 @@ export default function Features() {
                     </div>
                 </div>
             </section>
-        </WebsiteLayout>
+        </WebsiteLayout >
     );
 }

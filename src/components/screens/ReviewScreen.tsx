@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Edit3, Info, History, RefreshCw, Loader2 } from 'lucide-react';
+import { AlertTriangle, Edit3, Info, History, RefreshCw, Loader2, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -199,7 +200,34 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-6 scrollbar-hide">
+          {/* Diagnostic Reasoning Section (HAI-DEF Feature) */}
+          {analysisResult?.differential_diagnosis && analysisResult.differential_diagnosis.length > 0 && (
+            <div className="mb-6 space-y-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Brain className="w-4 h-4 text-teal-600" />
+                <h3 className="font-semibold text-sm text-teal-900">Diagnostic Reasoning</h3>
+              </div>
+              {analysisResult.differential_diagnosis.map((dd, idx) => (
+                <Card key={`dd-${idx}`} className="p-4 border-l-4 border-l-teal-500 bg-teal-50/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-sm">{dd.condition}</span>
+                    <Badge variant="outline" className={cn("text-xs uppercase", getConfidenceBadge(dd.likelihood))}>
+                      {dd.likelihood} Likelihood
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Progress value={dd.likelihood_score * 100} className="h-1.5 bg-teal-100" />
+                    <p className="text-xs text-muted-foreground leading-relaxed italic">
+                      "{dd.reasoning}"
+                    </p>
+                  </div>
+                </Card>
+              ))}
+              <div className="h-px bg-border my-4" />
+            </div>
+          )}
+
           {fields.length === 0 ? (
             <div className="flex items-center justify-center h-full text-muted-foreground">
               No findings available
