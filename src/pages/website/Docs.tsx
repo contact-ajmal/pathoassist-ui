@@ -354,48 +354,141 @@ export default function Docs() {
                         <div>
                             <h1 className="text-3xl font-bold text-slate-900 mb-4">User Guide</h1>
                             <p className="text-lg text-slate-600">
-                                A typical workflow from patient intake to final report.
+                                A comprehensive walkthrough of the clinical workflow, from patient intake to final diagnostic report generation.
                             </p>
                         </div>
 
-                        <div className="grid gap-8">
+                        {/* Workflow Steps */}
+                        <div className="space-y-6">
                             {[
                                 {
                                     step: 1,
                                     title: "Patient Management",
-                                    desc: "Start by selecting an existing patient or creating a new record. This ensures all analysis is linked to the correct Clinical Context."
+                                    desc: "Begin by selecting an existing patient record or creating a new one. Patient context is critical for accurate AI analysis.",
+                                    details: [
+                                        "Enter patient demographics (age, sex, relevant medical history)",
+                                        "Add clinical notes and presenting symptoms",
+                                        "Link prior cases for longitudinal tracking"
+                                    ],
+                                    color: "teal"
                                 },
                                 {
                                     step: 2,
-                                    title: "Case Upload",
-                                    desc: "Upload a Whole Slide Image (.svs, .ndpi) or select a demo case. The system automatically generates thumbnails and extracts metadata."
+                                    title: "Slide Upload & Preprocessing",
+                                    desc: "Upload digitized pathology slides in standard formats. The system handles all preprocessing automatically.",
+                                    details: [
+                                        "Supported formats: .svs, .ndpi, .tiff, .mrxs",
+                                        "Automatic thumbnail generation and metadata extraction",
+                                        "Multi-resolution pyramid loading for responsive viewing"
+                                    ],
+                                    color: "sky"
                                 },
                                 {
                                     step: 3,
-                                    title: "ROI Selection",
-                                    desc: "Use the Deep Zoom viewer to navigate the slide. The system can auto-detect tissue, or you can manually select Regions of Interest (ROIs) for detailed analysis."
+                                    title: "Deep Zoom Viewer & ROI Selection",
+                                    desc: "Navigate gigapixel slides seamlessly with our optimized viewer. Select regions of interest for detailed AI analysis.",
+                                    details: [
+                                        "Smooth pan and zoom across entire slide at any magnification",
+                                        "Automatic tissue detection using Otsu's thresholding",
+                                        "Manual annotation tools for precise ROI selection",
+                                        "Smart patch selection ranks regions by diagnostic potential"
+                                    ],
+                                    color: "violet"
                                 },
                                 {
                                     step: 4,
-                                    title: "AI Analysis",
-                                    desc: "The MedGemma model processes the selected patches, identifying cellular patterns, atypia, and mitotic activity. This runs locally or remotely depending on your config."
+                                    title: "AI-Powered Analysis",
+                                    desc: "MedGemma analyzes selected tissue patches using true multimodal reasoning, combining visual patterns with clinical context.",
+                                    details: [
+                                        "Cellular morphology and architecture assessment",
+                                        "Nuclear atypia and mitotic activity detection",
+                                        "Tissue type classification and pattern recognition",
+                                        "Confidence scoring for all findings"
+                                    ],
+                                    color: "amber"
                                 },
                                 {
                                     step: 5,
-                                    title: "Report Generation",
-                                    desc: "Review the structured findings. You can edit the narrative summary, approve the confidence scores, and export the final document as a PDF."
+                                    title: "Findings Review & Editing",
+                                    desc: "Review AI-generated findings with full transparency. Edit, approve, or reject individual observations.",
+                                    details: [
+                                        "Structured findings with confidence levels",
+                                        "Side-by-side comparison with source regions",
+                                        "Editable narrative summaries",
+                                        "Differential diagnosis suggestions"
+                                    ],
+                                    color: "rose"
+                                },
+                                {
+                                    step: 6,
+                                    title: "Report Generation & Export",
+                                    desc: "Generate professional pathology reports ready for clinical use or further review.",
+                                    details: [
+                                        "Customizable report templates",
+                                        "Export to PDF with embedded images",
+                                        "Audit trail and version history",
+                                        "Integration-ready structured data output"
+                                    ],
+                                    color: "emerald"
                                 }
                             ].map((item) => (
                                 <div key={item.step} className="flex gap-6 items-start">
-                                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-xl">
+                                    <div className={`flex-shrink-0 w-12 h-12 rounded-full bg-${item.color}-100 text-${item.color}-700 flex items-center justify-center font-bold text-xl`}>
                                         {item.step}
                                     </div>
-                                    <div className="pt-2">
+                                    <div className="flex-1">
                                         <h3 className="font-bold text-xl text-slate-900 mb-2">{item.title}</h3>
-                                        <p className="text-slate-600">{item.desc}</p>
+                                        <p className="text-slate-600 mb-3">{item.desc}</p>
+                                        <ul className="grid sm:grid-cols-2 gap-2">
+                                            {item.details.map((detail, idx) => (
+                                                <li key={idx} className="flex items-start gap-2 text-sm text-slate-500">
+                                                    <CheckCircle2 className="h-4 w-4 text-teal-500 mt-0.5 shrink-0" />
+                                                    <span>{detail}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </div>
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Best Practices */}
+                        <div className="bg-teal-50 border border-teal-200 rounded-xl p-6">
+                            <h3 className="font-bold text-lg text-teal-800 mb-4 flex items-center gap-2">
+                                <CheckCircle2 className="h-5 w-5" />
+                                Best Practices for Optimal Results
+                            </h3>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="bg-white rounded-lg p-4 border border-teal-100">
+                                    <h4 className="font-semibold text-slate-800 mb-2">Slide Quality</h4>
+                                    <p className="text-sm text-slate-600">Ensure slides are properly focused and free of artifacts. Poor quality scans reduce AI accuracy.</p>
+                                </div>
+                                <div className="bg-white rounded-lg p-4 border border-teal-100">
+                                    <h4 className="font-semibold text-slate-800 mb-2">Clinical Context</h4>
+                                    <p className="text-sm text-slate-600">Provide complete patient history. The AI uses clinical context to improve diagnostic precision.</p>
+                                </div>
+                                <div className="bg-white rounded-lg p-4 border border-teal-100">
+                                    <h4 className="font-semibold text-slate-800 mb-2">ROI Selection</h4>
+                                    <p className="text-sm text-slate-600">Select multiple representative regions. Diverse sampling improves comprehensive analysis.</p>
+                                </div>
+                                <div className="bg-white rounded-lg p-4 border border-teal-100">
+                                    <h4 className="font-semibold text-slate-800 mb-2">Human Review</h4>
+                                    <p className="text-sm text-slate-600">Always review AI findings. PathoAssist is a decision support tool, not a replacement for clinical judgment.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Important Notice */}
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                            <div className="flex items-start gap-3">
+                                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                                <div>
+                                    <h4 className="font-bold text-amber-800 mb-1">Clinical Disclaimer</h4>
+                                    <p className="text-sm text-amber-700">
+                                        PathoAssist is designed as a decision support tool for research and educational purposes. All AI-generated findings must be reviewed and validated by qualified healthcare professionals before any clinical decisions are made.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 );
@@ -406,38 +499,172 @@ export default function Docs() {
                         <div>
                             <h1 className="text-3xl font-bold text-slate-900 mb-4">System Architecture</h1>
                             <p className="text-lg text-slate-600">
-                                PathoAssist follows a modular, offline-first architecture.
+                                PathoAssist is built on a modular, privacy-first architecture designed for both standalone deployment and enterprise integration.
                             </p>
                         </div>
 
-                        <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
-                            <h3 className="font-bold text-lg mb-4">Tech Stack</h3>
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div className="p-4 bg-white rounded-lg shadow-sm border border-slate-100">
-                                    <span className="block text-xs text-slate-500 uppercase tracking-wider mb-1">Frontend</span>
-                                    <span className="font-semibold">React + TypeScript</span>
+                        {/* Architecture Diagram Placeholder */}
+                        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-8 text-white">
+                            <h3 className="font-bold text-lg mb-6 text-center">High-Level System Architecture</h3>
+                            <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center">
+                                <div className="bg-sky-500/20 border border-sky-400/50 rounded-lg p-4 w-40">
+                                    <div className="text-sky-300 text-xs uppercase tracking-wider mb-1">Frontend</div>
+                                    <div className="font-semibold">React UI</div>
                                 </div>
-                                <div className="p-4 bg-white rounded-lg shadow-sm border border-slate-100">
-                                    <span className="block text-xs text-slate-500 uppercase tracking-wider mb-1">Backend</span>
-                                    <span className="font-semibold">FastAPI (Python)</span>
+                                <div className="text-slate-500">→</div>
+                                <div className="bg-emerald-500/20 border border-emerald-400/50 rounded-lg p-4 w-40">
+                                    <div className="text-emerald-300 text-xs uppercase tracking-wider mb-1">Backend</div>
+                                    <div className="font-semibold">FastAPI Server</div>
                                 </div>
-                                <div className="p-4 bg-white rounded-lg shadow-sm border border-slate-100">
-                                    <span className="block text-xs text-slate-500 uppercase tracking-wider mb-1">AI Model</span>
-                                    <span className="font-semibold">Google MedGemma</span>
+                                <div className="text-slate-500">→</div>
+                                <div className="bg-violet-500/20 border border-violet-400/50 rounded-lg p-4 w-40">
+                                    <div className="text-violet-300 text-xs uppercase tracking-wider mb-1">AI Engine</div>
+                                    <div className="font-semibold">MedGemma</div>
                                 </div>
-                                <div className="p-4 bg-white rounded-lg shadow-sm border border-slate-100">
-                                    <span className="block text-xs text-slate-500 uppercase tracking-wider mb-1">Imaging</span>
-                                    <span className="font-semibold">OpenSlide</span>
+                            </div>
+                            <div className="flex justify-center mt-4">
+                                <div className="flex items-center gap-4 text-sm text-slate-400">
+                                    <span className="flex items-center gap-1"><span className="w-2 h-2 bg-amber-400 rounded-full"></span> WSI Processing</span>
+                                    <span className="flex items-center gap-1"><span className="w-2 h-2 bg-teal-400 rounded-full"></span> Local Storage</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="prose prose-slate bg-indigo-50/50 p-6 rounded-xl border-l-4 border-indigo-400">
-                            <h4>Why offline first?</h4>
-                            <p>
-                                In rural clinics and developing regions, internet connectivity is often unreliable.
-                                By optimizing for local inference on consumer hardware (like MacBooks), we bring
-                                diagnostic capabilities directly to the point of care without dependency on cloud infrastructure.
+                        {/* Core Components */}
+                        <div>
+                            <h3 className="font-bold text-xl text-slate-900 mb-4">Core Components</h3>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="border border-slate-200 rounded-xl p-5 hover:border-teal-300 transition-colors">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="bg-sky-100 p-2 rounded-lg">
+                                            <Code className="h-5 w-5 text-sky-600" />
+                                        </div>
+                                        <h4 className="font-bold text-slate-800">Frontend Application</h4>
+                                    </div>
+                                    <p className="text-sm text-slate-600 mb-3">Modern React application with TypeScript for type safety and enhanced developer experience.</p>
+                                    <ul className="text-xs text-slate-500 space-y-1">
+                                        <li>• Deep Zoom slide viewer with OpenSeadragon</li>
+                                        <li>• Responsive design for desktop and tablet</li>
+                                        <li>• State management with React hooks</li>
+                                        <li>• Tailwind CSS for consistent styling</li>
+                                    </ul>
+                                </div>
+
+                                <div className="border border-slate-200 rounded-xl p-5 hover:border-teal-300 transition-colors">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="bg-emerald-100 p-2 rounded-lg">
+                                            <Server className="h-5 w-5 text-emerald-600" />
+                                        </div>
+                                        <h4 className="font-bold text-slate-800">Backend API</h4>
+                                    </div>
+                                    <p className="text-sm text-slate-600 mb-3">High-performance Python backend handling slide processing, AI inference, and data management.</p>
+                                    <ul className="text-xs text-slate-500 space-y-1">
+                                        <li>• FastAPI for async request handling</li>
+                                        <li>• OpenSlide for multi-format WSI support</li>
+                                        <li>• OpenCV for tissue detection algorithms</li>
+                                        <li>• RESTful API with automatic documentation</li>
+                                    </ul>
+                                </div>
+
+                                <div className="border border-slate-200 rounded-xl p-5 hover:border-teal-300 transition-colors">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="bg-violet-100 p-2 rounded-lg">
+                                            <Cpu className="h-5 w-5 text-violet-600" />
+                                        </div>
+                                        <h4 className="font-bold text-slate-800">AI Inference Engine</h4>
+                                    </div>
+                                    <p className="text-sm text-slate-600 mb-3">Multimodal vision-language model optimized for medical imaging with clinical reasoning capabilities.</p>
+                                    <ul className="text-xs text-slate-500 space-y-1">
+                                        <li>• Google MedGemma foundation model</li>
+                                        <li>• 4-bit quantization for efficient inference</li>
+                                        <li>• Support for MPS, CUDA, and CPU</li>
+                                        <li>• Structured output for findings extraction</li>
+                                    </ul>
+                                </div>
+
+                                <div className="border border-slate-200 rounded-xl p-5 hover:border-teal-300 transition-colors">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="bg-amber-100 p-2 rounded-lg">
+                                            <FileText className="h-5 w-5 text-amber-600" />
+                                        </div>
+                                        <h4 className="font-bold text-slate-800">Report Generator</h4>
+                                    </div>
+                                    <p className="text-sm text-slate-600 mb-3">Automated report generation with customizable templates and professional formatting.</p>
+                                    <ul className="text-xs text-slate-500 space-y-1">
+                                        <li>• Clinical-grade report templates</li>
+                                        <li>• PDF export with embedded images</li>
+                                        <li>• Structured data output for EHR integration</li>
+                                        <li>• Audit trail and version control</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Data Flow */}
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+                            <h3 className="font-bold text-lg text-slate-900 mb-4">Data Flow</h3>
+                            <div className="space-y-4">
+                                <div className="flex items-start gap-4">
+                                    <div className="bg-teal-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0">1</div>
+                                    <div>
+                                        <h4 className="font-semibold text-slate-800">Slide Ingestion</h4>
+                                        <p className="text-sm text-slate-600">WSI files are uploaded and stored locally. OpenSlide extracts multi-resolution tiles without loading entire files into memory.</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-4">
+                                    <div className="bg-teal-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0">2</div>
+                                    <div>
+                                        <h4 className="font-semibold text-slate-800">Tissue Detection</h4>
+                                        <p className="text-sm text-slate-600">Otsu's thresholding identifies tissue regions. Color variance scoring ranks patches by diagnostic relevance.</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-4">
+                                    <div className="bg-teal-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0">3</div>
+                                    <div>
+                                        <h4 className="font-semibold text-slate-800">AI Analysis</h4>
+                                        <p className="text-sm text-slate-600">Selected patches are processed by MedGemma with clinical context. The model generates structured findings with confidence scores.</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-4">
+                                    <div className="bg-teal-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0">4</div>
+                                    <div>
+                                        <h4 className="font-semibold text-slate-800">Report Assembly</h4>
+                                        <p className="text-sm text-slate-600">Findings are aggregated into a cohesive narrative. PDFs are generated with professional formatting and embedded visualizations.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Design Principles */}
+                        <div>
+                            <h3 className="font-bold text-xl text-slate-900 mb-4">Design Principles</h3>
+                            <div className="grid md:grid-cols-3 gap-4">
+                                <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200 rounded-xl p-5">
+                                    <Shield className="h-8 w-8 text-teal-600 mb-3" />
+                                    <h4 className="font-bold text-slate-800 mb-2">Privacy First</h4>
+                                    <p className="text-sm text-slate-600">All data processing happens locally by default. No patient information leaves your environment without explicit configuration.</p>
+                                </div>
+                                <div className="bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-200 rounded-xl p-5">
+                                    <Activity className="h-8 w-8 text-sky-600 mb-3" />
+                                    <h4 className="font-bold text-slate-800 mb-2">Offline Capable</h4>
+                                    <p className="text-sm text-slate-600">After initial setup, PathoAssist runs without internet. Critical for rural clinics and areas with unreliable connectivity.</p>
+                                </div>
+                                <div className="bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-5">
+                                    <Cpu className="h-8 w-8 text-violet-600 mb-3" />
+                                    <h4 className="font-bold text-slate-800 mb-2">Hardware Optimized</h4>
+                                    <p className="text-sm text-slate-600">Automatic detection and optimization for available hardware—Apple Silicon, NVIDIA GPUs, or CPU fallback.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Why Offline First */}
+                        <div className="bg-indigo-50/50 p-6 rounded-xl border-l-4 border-indigo-400">
+                            <h4 className="font-bold text-indigo-900 mb-2">Why Offline-First Matters</h4>
+                            <p className="text-indigo-800">
+                                In rural clinics and developing regions, internet connectivity is often unreliable or unavailable.
+                                By optimizing for local inference on consumer hardware, PathoAssist brings diagnostic capabilities
+                                directly to the point of care—eliminating dependency on cloud infrastructure and ensuring
+                                continuous operation regardless of network conditions.
                             </p>
                         </div>
                     </div>
