@@ -50,6 +50,9 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                         <Link to="/tech-stack" className="hover:text-teal-600 transition-colors">
                             Tech Stack
                         </Link>
+                        <Link to="/wsi-processing" className="hover:text-violet-600 transition-colors">
+                            WSI Processing
+                        </Link>
                     </div>
 
                     <div className="flex items-center gap-4">
