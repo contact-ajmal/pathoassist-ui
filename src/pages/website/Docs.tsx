@@ -158,219 +158,145 @@ export default function Docs() {
                 return (
                     <div className="space-y-8 animate-fade-in">
                         <div>
-                            <h1 className="text-3xl font-bold text-slate-900 mb-4">Deployment Guide</h1>
+                            <h1 className="text-3xl font-bold text-slate-900 mb-4">Deployment Options</h1>
                             <p className="text-lg text-slate-600">
-                                PathoAssist supports two deployment modes: <strong>Local Inference</strong> (fully offline, maximum privacy) and <strong>Remote Inference</strong> (GPU-accelerated via cloud/Colab).
+                                PathoAssist offers flexible deployment models to meet diverse institutional requirements, from fully offline local installations to cloud-accelerated configurations.
                             </p>
                         </div>
 
-                        {/* Prerequisites */}
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
-                            <h3 className="font-bold text-lg text-amber-800 mb-3 flex items-center gap-2">
-                                <AlertTriangle className="h-5 w-5" />
-                                Prerequisites (Both Modes)
-                            </h3>
-                            <ul className="space-y-2 text-amber-700 text-sm">
-                                <li>• <strong>Python 3.10+</strong> installed</li>
-                                <li>• <strong>Node.js 18+</strong> installed</li>
-                                <li>• <strong>Git</strong> for cloning the repository</li>
-                                <li>• <strong>Hugging Face Account</strong> with access to <code className="bg-amber-100 px-1 rounded">google/medgemma-1.5-4b-it</code> model</li>
-                            </ul>
+                        {/* Deployment Models */}
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="bg-emerald-100 p-2 rounded-lg">
+                                        <Shield className="h-6 w-6 text-emerald-600" />
+                                    </div>
+                                    <h3 className="font-bold text-xl text-emerald-800">Local Inference</h3>
+                                </div>
+                                <p className="text-slate-600 mb-4">
+                                    Run PathoAssist entirely on your own hardware. All patient data and AI processing stays within your secure environment.
+                                </p>
+                                <ul className="space-y-2 text-sm text-slate-600">
+                                    <li className="flex items-start gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                                        <span>Complete data privacy—nothing leaves your network</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                                        <span>Works offline after initial setup</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                                        <span>Optimized for modern hardware (Apple Silicon, NVIDIA GPUs)</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-200 rounded-xl p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="bg-sky-100 p-2 rounded-lg">
+                                        <Server className="h-6 w-6 text-sky-600" />
+                                    </div>
+                                    <h3 className="font-bold text-xl text-sky-800">Remote Inference</h3>
+                                </div>
+                                <p className="text-slate-600 mb-4">
+                                    Leverage cloud GPU resources for faster processing while maintaining local control of your data pipeline.
+                                </p>
+                                <ul className="space-y-2 text-sm text-slate-600">
+                                    <li className="flex items-start gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-sky-500 mt-0.5 shrink-0" />
+                                        <span>Faster inference on high-performance GPUs</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-sky-500 mt-0.5 shrink-0" />
+                                        <span>Lower hardware requirements at the point of care</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-sky-500 mt-0.5 shrink-0" />
+                                        <span>Configurable for secure cloud environments</span>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
 
-                        {/* Step 1: Clone & Setup */}
+                        {/* System Requirements */}
                         <div className="border border-slate-200 rounded-xl overflow-hidden">
                             <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-                                <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-                                    <span className="bg-teal-500 text-white text-sm w-6 h-6 rounded-full flex items-center justify-center">1</span>
-                                    Clone Repository & Install Dependencies
-                                </h3>
-                            </div>
-                            <div className="p-6 space-y-4">
-                                <div className="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-100 overflow-x-auto">
-                                    <p className="text-slate-400"># Clone the repository</p>
-                                    <p>git clone https://github.com/contact-ajmal/pathoassist-ui.git</p>
-                                    <p>cd pathoassist-ui</p>
-                                    <p className="mt-3 text-slate-400"># Install frontend dependencies</p>
-                                    <p>npm install</p>
-                                    <p className="mt-3 text-slate-400"># Setup backend virtual environment</p>
-                                    <p>cd backend</p>
-                                    <p>python -m venv venv</p>
-                                    <p>source venv/bin/activate  <span className="text-slate-500"># On Windows: venv\Scripts\activate</span></p>
-                                    <p>pip install -r requirements.txt</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Step 2: Hugging Face Setup */}
-                        <div className="border border-slate-200 rounded-xl overflow-hidden">
-                            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-                                <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-                                    <span className="bg-teal-500 text-white text-sm w-6 h-6 rounded-full flex items-center justify-center">2</span>
-                                    Configure Hugging Face Token
-                                </h3>
-                            </div>
-                            <div className="p-6 space-y-4">
-                                <p className="text-slate-600">MedGemma is a gated model. You need to:</p>
-                                <ol className="list-decimal list-inside space-y-2 text-slate-600 text-sm">
-                                    <li>Go to <a href="https://huggingface.co/google/medgemma-1.5-4b-it" target="_blank" rel="noopener noreferrer" className="text-teal-600 underline">huggingface.co/google/medgemma-1.5-4b-it</a></li>
-                                    <li>Accept the model's license agreement</li>
-                                    <li>Create an Access Token at <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-teal-600 underline">huggingface.co/settings/tokens</a></li>
-                                </ol>
-                                <div className="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-100">
-                                    <p className="text-slate-400"># Create .env file in backend directory</p>
-                                    <p>cd backend</p>
-                                    <p>echo 'HF_TOKEN=hf_your_token_here' {">"} .env</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Deployment Mode Selection */}
-                        <div className="bg-teal-50 border border-teal-200 rounded-xl p-6">
-                            <h3 className="font-bold text-lg text-teal-800 mb-4">Choose Your Deployment Mode</h3>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="bg-white rounded-lg p-4 border border-teal-200">
-                                    <h4 className="font-bold text-teal-700 mb-2">🖥️ Local Inference</h4>
-                                    <p className="text-sm text-slate-600">AI runs on your machine. Requires 16GB+ RAM. Best for: privacy, offline use, Apple Silicon.</p>
-                                </div>
-                                <div className="bg-white rounded-lg p-4 border border-teal-200">
-                                    <h4 className="font-bold text-teal-700 mb-2">☁️ Remote Inference</h4>
-                                    <p className="text-sm text-slate-600">AI runs on cloud GPU (Colab/ngrok). Faster processing. Best for: older hardware, demos.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* LOCAL INFERENCE SECTION */}
-                        <div className="border-2 border-emerald-300 rounded-xl overflow-hidden">
-                            <div className="bg-emerald-50 px-6 py-4 border-b border-emerald-200">
-                                <h3 className="font-bold text-xl text-emerald-800 flex items-center gap-2">
-                                    <Shield className="h-5 w-5" />
-                                    Option A: Local Inference (Offline Mode)
-                                </h3>
-                            </div>
-                            <div className="p-6 space-y-6">
-                                <div className="bg-emerald-50/50 border border-emerald-200 rounded-lg p-4">
-                                    <h4 className="font-bold text-emerald-700 mb-2">System Requirements</h4>
-                                    <ul className="text-sm text-emerald-700 space-y-1">
-                                        <li>• <strong>macOS (Apple Silicon):</strong> M1/M2/M3 with 16GB+ RAM (uses Metal Performance Shaders)</li>
-                                        <li>• <strong>Linux/Windows (NVIDIA):</strong> CUDA-capable GPU with 8GB+ VRAM</li>
-                                        <li>• <strong>CPU Fallback:</strong> 32GB+ RAM (slow but functional)</li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <h4 className="font-bold text-slate-900 mb-3">Step 3A: Configure for Local Mode</h4>
-                                    <div className="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-100 overflow-x-auto">
-                                        <p className="text-slate-400"># backend/.env configuration</p>
-                                        <p><span className="text-emerald-400">HF_TOKEN</span>=hf_your_token_here</p>
-                                        <p><span className="text-emerald-400">DEVICE</span>=auto  <span className="text-slate-500"># Options: auto, cuda, mps, cpu</span></p>
-                                        <p><span className="text-emerald-400">USE_QUANTIZATION</span>=true  <span className="text-slate-500"># 4-bit quantization for lower RAM</span></p>
-                                        <p className="text-slate-400"># Leave REMOTE_INFERENCE_URL empty for local mode</p>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <h4 className="font-bold text-slate-900 mb-3">Step 4A: Start the Application</h4>
-                                    <div className="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-100 overflow-x-auto">
-                                        <p className="text-slate-400"># Terminal 1: Start backend</p>
-                                        <p>cd backend</p>
-                                        <p>source venv/bin/activate</p>
-                                        <p>python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload</p>
-                                        <p className="mt-4 text-slate-400"># Terminal 2: Start frontend</p>
-                                        <p>cd pathoassist-ui  <span className="text-slate-500"># project root</span></p>
-                                        <p>npm run dev</p>
-                                    </div>
-                                    <p className="text-sm text-slate-500 mt-3">
-                                        On first run, the model (~8GB) will download automatically. Subsequent starts are instant.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* REMOTE INFERENCE SECTION */}
-                        <div className="border-2 border-sky-300 rounded-xl overflow-hidden">
-                            <div className="bg-sky-50 px-6 py-4 border-b border-sky-200">
-                                <h3 className="font-bold text-xl text-sky-800 flex items-center gap-2">
-                                    <Server className="h-5 w-5" />
-                                    Option B: Remote Inference (Cloud GPU)
-                                </h3>
-                            </div>
-                            <div className="p-6 space-y-6">
-                                <div className="bg-sky-50/50 border border-sky-200 rounded-lg p-4">
-                                    <h4 className="font-bold text-sky-700 mb-2">When to Use Remote Mode</h4>
-                                    <ul className="text-sm text-sky-700 space-y-1">
-                                        <li>• Older hardware without GPU or insufficient RAM</li>
-                                        <li>• Quick demos without installing the model locally</li>
-                                        <li>• Using Google Colab's free T4 GPU tier</li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <h4 className="font-bold text-slate-900 mb-3">Step 3B: Set Up Colab Inference Server</h4>
-                                    <ol className="list-decimal list-inside space-y-3 text-slate-600">
-                                        <li>Open our <a href="https://colab.research.google.com" target="_blank" rel="noopener noreferrer" className="text-teal-600 underline">Google Colab notebook</a> (or create your own)</li>
-                                        <li>Run all cells to start the MedGemma API server</li>
-                                        <li>Copy the <strong>ngrok public URL</strong> (e.g., <code className="bg-slate-100 px-1 rounded text-sm">https://abc123.ngrok-free.app</code>)</li>
-                                    </ol>
-                                    <div className="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-100 mt-4">
-                                        <p className="text-slate-400"># Example Colab cell to expose API</p>
-                                        <p>!pip install pyngrok flask transformers</p>
-                                        <p>from pyngrok import ngrok</p>
-                                        <p>public_url = ngrok.connect(5000)</p>
-                                        <p>print(f"ngrok URL: {'{'}public_url{'}'}")</p>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <h4 className="font-bold text-slate-900 mb-3">Step 4B: Configure Backend for Remote</h4>
-                                    <div className="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-100 overflow-x-auto">
-                                        <p className="text-slate-400"># backend/.env configuration</p>
-                                        <p><span className="text-sky-400">REMOTE_INFERENCE_URL</span>=https://abc123.ngrok-free.app</p>
-                                        <p><span className="text-slate-500"># HF_TOKEN not needed when using remote mode</span></p>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <h4 className="font-bold text-slate-900 mb-3">Step 5B: Start the Application</h4>
-                                    <div className="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-100 overflow-x-auto">
-                                        <p className="text-slate-400"># Same as local mode - backend auto-detects remote URL</p>
-                                        <p>cd backend && python -m uvicorn app.main:app --port 8000</p>
-                                        <p className="mt-2 text-slate-400"># In another terminal:</p>
-                                        <p>npm run dev</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* System Validator */}
-                        <div className="bg-slate-900 text-white rounded-xl p-6 shadow-xl">
-                            <h3 className="font-bold text-xl mb-4 flex items-center gap-2">
-                                <Terminal className="h-5 w-5 text-teal-400" />
-                                System Capability Validator
-                            </h3>
-                            <p className="text-slate-300 text-sm mb-6">
-                                Check if this device meets the requirements for offline inference with MedGemma-4B.
-                            </p>
-
-                            <DeploymentValidator />
-                        </div>
-
-                        {/* Verification */}
-                        <div className="border border-slate-200 rounded-xl overflow-hidden">
-                            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-                                <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-                                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                                    Verify Your Deployment
-                                </h3>
+                                <h3 className="font-bold text-lg text-slate-900">System Requirements</h3>
                             </div>
                             <div className="p-6">
-                                <p className="text-slate-600 mb-4">Once both frontend and backend are running:</p>
-                                <ol className="list-decimal list-inside space-y-2 text-slate-600 text-sm">
-                                    <li>Open <code className="bg-slate-100 px-1 rounded">http://localhost:5173</code> in your browser</li>
-                                    <li>Navigate to the Documentation page and run the <strong>System Validator</strong> above</li>
-                                    <li>Upload a sample WSI file (.svs or .ndpi) to test the full pipeline</li>
-                                    <li>Check backend logs for any model loading or inference errors</li>
-                                </ol>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <h4 className="font-semibold text-slate-800 mb-3">For Local Inference</h4>
+                                        <ul className="space-y-2 text-sm text-slate-600">
+                                            <li>• macOS with Apple Silicon (M1/M2/M3), 16GB+ RAM</li>
+                                            <li>• Linux/Windows with NVIDIA GPU, 8GB+ VRAM</li>
+                                            <li>• CPU-only mode available (32GB+ RAM)</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-semibold text-slate-800 mb-3">For Remote Inference</h4>
+                                        <ul className="space-y-2 text-sm text-slate-600">
+                                            <li>• Any modern computer with a web browser</li>
+                                            <li>• Stable network connection</li>
+                                            <li>• Cloud GPU instance (provided or self-hosted)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Enterprise Deployment */}
+                        <div className="bg-slate-900 text-white rounded-xl p-8">
+                            <div className="flex items-start gap-4">
+                                <div className="bg-teal-500/20 p-3 rounded-xl shrink-0">
+                                    <Shield className="h-8 w-8 text-teal-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-xl mb-2">Enterprise & Institutional Deployment</h3>
+                                    <p className="text-slate-300 mb-4">
+                                        For healthcare institutions requiring HIPAA-compliant deployments, on-premise installations, or custom integrations with existing hospital systems, we provide dedicated support.
+                                    </p>
+                                    <ul className="space-y-2 text-sm text-slate-300 mb-6">
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle2 className="h-4 w-4 text-teal-400" />
+                                            Private repository access with full source code
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle2 className="h-4 w-4 text-teal-400" />
+                                            Containerized deployment options
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle2 className="h-4 w-4 text-teal-400" />
+                                            Integration support for HL7/FHIR workflows
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle2 className="h-4 w-4 text-teal-400" />
+                                            Dedicated onboarding and training
+                                        </li>
+                                    </ul>
+                                    <a
+                                        href="https://www.linkedin.com/in/ajmalnazirbaba/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 bg-teal-500 hover:bg-teal-400 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors"
+                                    >
+                                        Contact for Deployment Support
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Open Source Note */}
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                            <div className="flex items-start gap-3">
+                                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                                <div>
+                                    <h4 className="font-bold text-amber-800 mb-1">Developer Access</h4>
+                                    <p className="text-sm text-amber-700">
+                                        PathoAssist is available as open-source for research and educational purposes. Developers can access the public repository on GitHub. Technical documentation is included in the repository.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
