@@ -1,242 +1,274 @@
-import { useState, useEffect } from "react";
 import { WebsiteLayout } from "@/layouts/WebsiteLayout";
 import { motion } from "framer-motion";
 import {
     Globe2,
-    TrendingUp,
-    WifiOff,
-    Users,
-    Calculator,
-    DollarSign,
     Clock,
-    BarChart3,
+    Users,
+    Activity,
+    Heart,
+    AlertTriangle,
+    CheckCircle2,
+    Microscope,
+    Zap,
+    Building2,
+    Stethoscope,
     ArrowRight
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 export default function Impact() {
-    // Calculator State
-    const [caseVolume, setCaseVolume] = useState([20]); // Slides per day
-    const [dataCost, setDataCost] = useState([5]); // $ per GB (High like in rural Africa sat links)
-    const [pathologistRate, setPathologistRate] = useState([50]); // $ per hour
+    const impactAreas = [
+        {
+            icon: Clock,
+            title: "Faster Detection, Better Outcomes",
+            description: "Early detection of cancer and other diseases dramatically improves patient survival rates. PathoAssist enables rapid preliminary analysis, reducing diagnostic delays from weeks to hours.",
+            stat: "15 min",
+            statLabel: "Average time to preliminary findings"
+        },
+        {
+            icon: Building2,
+            title: "Relief for Overloaded Hospitals",
+            description: "Hospitals worldwide face pathologist shortages. By automating initial screening and prioritization, PathoAssist helps clinical teams focus on the most critical cases first.",
+            stat: "4x",
+            statLabel: "Faster case triage"
+        },
+        {
+            icon: Stethoscope,
+            title: "Empowering Pathologists",
+            description: "PathoAssist doesn't replace pathologists—it amplifies their capabilities. AI-generated findings serve as a 'second opinion', highlighting regions of interest and potential abnormalities.",
+            stat: "100%",
+            statLabel: "Final decisions remain with clinicians"
+        }
+    ];
 
-    // Constants
-    const AVG_SLIDE_SIZE_GB = 1.2;
-    const MANUAL_REVIEW_MINS = 20;
-    const AI_ASSISTED_MINS = 5;
-
-    // Derived Metrics
-    const dailyDataSaved = caseVolume[0] * AVG_SLIDE_SIZE_GB;
-    const monthlyDataCostSaved = dailyDataSaved * dataCost[0] * 22; // 22 working days
-    const dailyTimeSavedMins = caseVolume[0] * (MANUAL_REVIEW_MINS - AI_ASSISTED_MINS);
-    const monthlyTimeSavedHours = (dailyTimeSavedMins / 60) * 22;
-    const monthlyLaborValue = monthlyTimeSavedHours * pathologistRate[0];
+    const useCases = [
+        {
+            title: "High-Volume Cancer Screening",
+            description: "In breast, cervical, and colorectal cancer programs, PathoAssist pre-screens slides to flag suspicious cases, allowing pathologists to prioritize their review queue.",
+            icon: Activity
+        },
+        {
+            title: "Rural & Remote Clinics",
+            description: "Clinics without on-site pathologists can generate preliminary reports locally, enabling faster referrals and reducing patient anxiety during diagnostic waits.",
+            icon: Globe2
+        },
+        {
+            title: "Emergency Departments",
+            description: "When time is critical, rapid AI-assisted analysis helps ED physicians understand tissue samples faster, supporting urgent treatment decisions.",
+            icon: AlertTriangle
+        },
+        {
+            title: "Training & Education",
+            description: "Medical students and residents can use PathoAssist as a learning tool, comparing their assessments against AI-generated findings to develop diagnostic skills.",
+            icon: Users
+        }
+    ];
 
     return (
         <WebsiteLayout>
             {/* Hero Section */}
-            <section className="relative overflow-hidden py-24 bg-slate-900 text-white">
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2000&auto=format&fit=crop')] opacity-20 bg-cover bg-center" />
+            <section className="relative overflow-hidden py-24 bg-gradient-to-br from-rose-900 via-pink-900 to-red-900 text-white">
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptMCAwdi02aC02djZoNnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30" />
                 <div className="container mx-auto px-4 relative z-10">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="max-w-4xl mx-auto text-center"
                     >
-                        <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/20 border border-blue-400/30 px-3 py-1 text-sm font-medium text-blue-200 mb-6">
-                            <Globe2 className="h-4 w-4" />
-                            Global Health Initiative
+                        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-1.5 text-sm font-medium mb-6">
+                            <Heart className="h-4 w-4 text-rose-300" />
+                            Saving Lives Through Early Detection
                         </div>
-                        <h1 className="text-5xl font-bold mb-6 tracking-tight">Bridging the Diagnostic Gap</h1>
-                        <p className="text-xl text-slate-300 font-light leading-relaxed max-w-2xl mx-auto">
-                            In many regions, a lack of specialists and internet connectivity creates a fatal bottleneck.
-                            PathoAssist is designed to break these barriers through <strong>Offline-First AI</strong>.
+                        <h1 className="text-5xl font-bold mb-6 tracking-tight">
+                            Every Minute Counts in Disease Detection
+                        </h1>
+                        <p className="text-xl text-rose-100 font-light leading-relaxed max-w-2xl mx-auto">
+                            When hospitals are overwhelmed and pathologists are stretched thin, PathoAssist provides the rapid, reliable support that helps catch diseases earlier—when they're most treatable.
                         </p>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Problem Statement Grid */}
-            <section className="py-20 bg-white">
+            {/* Critical Stats */}
+            <section className="py-16 bg-white border-b">
                 <div className="container mx-auto px-4">
-                    <div className="grid md:grid-cols-3 gap-8 mb-16">
-                        <div className="text-center p-6">
-                            <h3 className="text-4xl font-bold text-slate-900 mb-2">1 per 1M</h3>
-                            <p className="text-slate-600">Pathologists in Sub-Saharan Africa vs 1 per 15k in US.</p>
-                        </div>
-                        <div className="text-center p-6 border-x border-slate-100">
-                            <h3 className="text-4xl font-bold text-slate-900 mb-2">47%</h3>
-                            <p className="text-slate-600">Of the world has no or expensive/unreliable internet access.</p>
-                        </div>
-                        <div className="text-center p-6">
-                            <h3 className="text-4xl font-bold text-slate-900 mb-2">2 Weeks</h3>
-                            <p className="text-slate-600">Average wait time for cancer diagnosis in resource-limited settings.</p>
-                        </div>
-                    </div>
-
-                    <div className="max-w-4xl mx-auto bg-slate-50 rounded-2xl p-8 border border-slate-200">
-                        <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <WifiOff className="h-6 w-6 text-slate-600" />
-                            Why "Cloud-First" Fails
-                        </h2>
-                        <p className="text-slate-600 leading-relaxed">
-                            Most AI pathology solutions require uploading gigapixel slides (1-2GB each) to the cloud for processing.
-                            In rural clinics with satellite internet ($5+/GB) or unstable 3G, this is functionally impossible.
-                            <strong>PathoAssist brings the AI to the data</strong>, running complex HAI-DEF models locally on consumer hardware.
-                        </p>
+                    <div className="grid md:grid-cols-3 gap-8">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-center p-8 rounded-2xl bg-rose-50"
+                        >
+                            <h3 className="text-5xl font-bold text-rose-600 mb-3">91%</h3>
+                            <p className="text-slate-700 font-medium">5-year survival rate for localized breast cancer</p>
+                            <p className="text-sm text-slate-500 mt-2">vs 29% for distant-stage diagnosis</p>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.1 }}
+                            className="text-center p-8 rounded-2xl bg-amber-50"
+                        >
+                            <h3 className="text-5xl font-bold text-amber-600 mb-3">2 Weeks</h3>
+                            <p className="text-slate-700 font-medium">Average wait time for pathology results</p>
+                            <p className="text-sm text-slate-500 mt-2">in overburdened healthcare systems</p>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.2 }}
+                            className="text-center p-8 rounded-2xl bg-teal-50"
+                        >
+                            <h3 className="text-5xl font-bold text-teal-600 mb-3">1:15,000</h3>
+                            <p className="text-slate-700 font-medium">Pathologist-to-patient ratio recommended</p>
+                            <p className="text-sm text-slate-500 mt-2">vs 1:1,000,000 in some regions</p>
+                        </motion.div>
                     </div>
                 </div>
             </section>
 
-            {/* Interactive ROI Calculator */}
-            <section className="py-24 bg-teal-900 text-white relative overflow-hidden" id="calculator">
-                <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]" />
-                <div className="container mx-auto px-4 relative z-10">
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold mb-4">Impact Calculator</h2>
-                        <p className="text-teal-200">Estimate the tangible value of deploying PathoAssist in your facility.</p>
+            {/* Core Impact Areas */}
+            <section className="py-24 bg-slate-50">
+                <div className="container mx-auto px-4">
+                    <div className="text-center max-w-2xl mx-auto mb-16">
+                        <h2 className="text-3xl font-bold text-slate-900 mb-4">How PathoAssist Makes a Difference</h2>
+                        <p className="text-slate-600">Designed with clinical workflows in mind, PathoAssist addresses real challenges faced by healthcare providers worldwide.</p>
                     </div>
 
-                    <div className="grid lg:grid-cols-12 gap-8 max-w-6xl mx-auto">
-                        {/* Inputs */}
-                        <Card className="lg:col-span-5 bg-white/10 backdrop-blur-md border-white/20 text-white p-8">
-                            <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                                <Calculator className="h-5 w-5" />
-                                Facility Parameters
-                            </h3>
-
-                            <div className="space-y-8">
-                                <div className="space-y-4">
-                                    <div className="flex justify-between">
-                                        <Label className="text-teal-100">Daily Case Volume</Label>
-                                        <span className="font-mono bg-teal-950/50 px-2 py-1 rounded text-sm">{caseVolume[0]} slides/day</span>
-                                    </div>
-                                    <Slider
-                                        value={caseVolume}
-                                        onValueChange={setCaseVolume}
-                                        max={100}
-                                        step={1}
-                                        className="py-4"
-                                    />
+                    <div className="grid lg:grid-cols-3 gap-8">
+                        {impactAreas.map((area, idx) => (
+                            <motion.div
+                                key={area.title}
+                                initial={{ opacity: 0, y: 30 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: idx * 0.1 }}
+                                className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-lg transition-shadow"
+                            >
+                                <div className="bg-gradient-to-br from-rose-500 to-pink-600 w-14 h-14 rounded-xl flex items-center justify-center mb-6">
+                                    <area.icon className="w-7 h-7 text-white" />
                                 </div>
-
-                                <div className="space-y-4">
-                                    <div className="flex justify-between">
-                                        <Label className="text-teal-100">Connectivity Cost (per GB)</Label>
-                                        <span className="font-mono bg-teal-950/50 px-2 py-1 rounded text-sm">${dataCost[0].toFixed(2)}</span>
-                                    </div>
-                                    <Slider
-                                        value={dataCost}
-                                        onValueChange={setDataCost}
-                                        max={20}
-                                        step={0.5}
-                                        className="py-4"
-                                    />
-                                    <p className="text-xs text-teal-300/60">Global avg mobile data cost varies: India ($0.17) vs Falkland Islands ($38+).</p>
+                                <h3 className="text-xl font-bold text-slate-900 mb-3">{area.title}</h3>
+                                <p className="text-slate-600 leading-relaxed mb-6">{area.description}</p>
+                                <div className="pt-4 border-t border-slate-100">
+                                    <span className="text-3xl font-bold text-rose-600">{area.stat}</span>
+                                    <span className="text-sm text-slate-500 ml-2">{area.statLabel}</span>
                                 </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
 
-                                <div className="space-y-4">
-                                    <div className="flex justify-between">
-                                        <Label className="text-teal-100">Pathologist Hourly Rate</Label>
-                                        <span className="font-mono bg-teal-950/50 px-2 py-1 rounded text-sm">${pathologistRate[0]}/hr</span>
+            {/* Use Cases */}
+            <section className="py-24 bg-white">
+                <div className="container mx-auto px-4">
+                    <div className="text-center max-w-2xl mx-auto mb-16">
+                        <h2 className="text-3xl font-bold text-slate-900 mb-4">Where PathoAssist Helps Most</h2>
+                        <p className="text-slate-600">From high-volume screening programs to emergency situations, PathoAssist adapts to diverse clinical needs.</p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                        {useCases.map((useCase, idx) => (
+                            <motion.div
+                                key={useCase.title}
+                                initial={{ opacity: 0, x: idx % 2 === 0 ? -20 : 20 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: idx * 0.1 }}
+                                className="flex gap-4 p-6 rounded-xl bg-slate-50 border border-slate-100 hover:border-rose-200 transition-colors"
+                            >
+                                <div className="bg-rose-100 w-12 h-12 rounded-lg flex items-center justify-center shrink-0">
+                                    <useCase.icon className="w-6 h-6 text-rose-600" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-900 mb-2">{useCase.title}</h3>
+                                    <p className="text-sm text-slate-600 leading-relaxed">{useCase.description}</p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Pathologist-Centered Design */}
+            <section className="py-20 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+                <div className="container mx-auto px-4">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="grid lg:grid-cols-2 gap-12 items-center">
+                            <div>
+                                <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
+                                    <Microscope className="w-4 h-4 text-rose-300" />
+                                    Built for Clinicians
+                                </div>
+                                <h2 className="text-3xl font-bold mb-6">AI That Supports, Not Replaces</h2>
+                                <p className="text-slate-300 leading-relaxed mb-6">
+                                    PathoAssist is designed as a <strong>clinical support tool</strong>—not an autonomous diagnostic system.
+                                    Every AI-generated finding is presented as a suggestion for the pathologist to verify, modify, or dismiss.
+                                </p>
+                                <ul className="space-y-4">
+                                    {[
+                                        "Highlights regions requiring attention",
+                                        "Provides confidence scores for transparency",
+                                        "Generates editable draft reports",
+                                        "Maintains full audit trail of changes"
+                                    ].map((item) => (
+                                        <li key={item} className="flex items-start gap-3">
+                                            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                                            <span className="text-slate-200">{item}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
+                                <div className="text-center">
+                                    <div className="bg-gradient-to-br from-rose-500 to-pink-600 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                        <Zap className="w-10 h-10 text-white" />
                                     </div>
-                                    <Slider
-                                        value={pathologistRate}
-                                        onValueChange={setPathologistRate}
-                                        max={300}
-                                        step={10}
-                                        className="py-4"
-                                    />
+                                    <h3 className="text-2xl font-bold mb-4">The PathoAssist Workflow</h3>
+                                    <div className="space-y-4 text-left">
+                                        <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+                                            <span className="bg-rose-500 text-white text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center">1</span>
+                                            <span className="text-slate-200">AI analyzes slide regions</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+                                            <span className="bg-rose-500 text-white text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center">2</span>
+                                            <span className="text-slate-200">Flags potential abnormalities</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+                                            <span className="bg-rose-500 text-white text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center">3</span>
+                                            <span className="text-slate-200">Pathologist reviews & validates</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 p-3 bg-emerald-500/20 rounded-lg border border-emerald-500/30">
+                                            <span className="bg-emerald-500 text-white text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center">✓</span>
+                                            <span className="text-emerald-300 font-medium">Final diagnosis by clinician</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </Card>
-
-                        {/* Outputs */}
-                        <div className="lg:col-span-7 grid sm:grid-cols-2 gap-4">
-                            <Card className="bg-white text-slate-900 p-6 flex flex-col justify-between border-0 shadow-xl">
-                                <div>
-                                    <div className="bg-blue-100 p-3 rounded-xl w-12 h-12 flex items-center justify-center mb-4">
-                                        <WifiOff className="h-6 w-6 text-blue-600" />
-                                    </div>
-                                    <h4 className="text-slate-500 font-medium text-sm uppercase tracking-wider">Monthly Bandwidth Saved</h4>
-                                </div>
-                                <div className="mt-4">
-                                    <span className="text-4xl font-bold tracking-tight">{Math.round(dailyDataSaved * 22)} GB</span>
-                                    <p className="text-sm text-green-600 font-medium flex items-center gap-1 mt-1">
-                                        <TrendingUp className="h-3 w-3" />
-                                        ${Math.round(monthlyDataCostSaved).toLocaleString()} saved/mo
-                                    </p>
-                                </div>
-                                <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-400">
-                                    Based on 1.2GB avg WSI size. Cloud analysis requires full upload.
-                                </div>
-                            </Card>
-
-                            <Card className="bg-white text-slate-900 p-6 flex flex-col justify-between border-0 shadow-xl">
-                                <div>
-                                    <div className="bg-amber-100 p-3 rounded-xl w-12 h-12 flex items-center justify-center mb-4">
-                                        <Clock className="h-6 w-6 text-amber-600" />
-                                    </div>
-                                    <h4 className="text-slate-500 font-medium text-sm uppercase tracking-wider">Clinical Hours Saved</h4>
-                                </div>
-                                <div className="mt-4">
-                                    <span className="text-4xl font-bold tracking-tight">{Math.round(monthlyTimeSavedHours)} hrs</span>
-                                    <p className="text-sm text-green-600 font-medium flex items-center gap-1 mt-1">
-                                        <TrendingUp className="h-3 w-3" />
-                                        ${Math.round(monthlyLaborValue).toLocaleString()} value/mo
-                                    </p>
-                                </div>
-                                <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-400">
-                                    AI-assisted triage (5 mins) vs Manual review (20 mins).
-                                </div>
-                            </Card>
-
-                            <Card className="sm:col-span-2 bg-gradient-to-br from-teal-500 to-teal-600 text-white p-8 border-0 shadow-xl">
-                                <div className="flex items-start justify-between">
-                                    <div>
-                                        <h4 className="text-teal-100 font-medium mb-1">Projected Annual Impact</h4>
-                                        <p className="text-5xl font-bold tracking-tight mb-2">
-                                            $ {Math.round((monthlyDataCostSaved + monthlyLaborValue) * 12).toLocaleString()}
-                                        </p>
-                                        <p className="text-teal-100">Total efficiency value generated per year.</p>
-                                    </div>
-                                    <div className="hidden sm:block">
-                                        <BarChart3 className="h-24 w-24 text-teal-300/20" />
-                                    </div>
-                                </div>
-                                <div className="mt-8 pt-6 border-t border-white/20 flex flex-wrap gap-6">
-                                    <div>
-                                        <span className="block text-2xl font-bold">{Math.round((dailyTimeSavedMins / 20) * 22)}</span>
-                                        <span className="text-sm text-teal-100">Additional Patients/Mo</span>
-                                    </div>
-                                    <div>
-                                        <span className="block text-2xl font-bold">100%</span>
-                                        <span className="text-sm text-teal-100">Data Privacy</span>
-                                    </div>
-                                </div>
-                            </Card>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* CTA */}
-            <section className="py-20 bg-slate-50">
+            <section className="py-20 bg-rose-50">
                 <div className="container mx-auto px-4 text-center">
-                    <h2 className="text-3xl font-bold text-slate-900 mb-6">Ready to make an impact?</h2>
+                    <h2 className="text-3xl font-bold text-slate-900 mb-6">Join the Mission for Earlier Detection</h2>
                     <p className="text-lg text-slate-600 max-w-2xl mx-auto mb-8">
-                        Join the community of clinics and researchers using PathoAssist to democratize access to advanced diagnostics.
+                        Whether you're a hospital administrator, pathologist, or researcher, PathoAssist can help you deliver faster, more accessible diagnostic support.
                     </p>
-                    <div className="flex justify-center gap-4">
-                        <Button size="lg" className="bg-teal-600 hover:bg-teal-700 h-12 px-8">
-                            <Link to="/docs">Case Studies</Link>
+                    <div className="flex justify-center gap-4 flex-wrap">
+                        <Button size="lg" className="bg-rose-600 hover:bg-rose-700 h-12 px-8">
+                            <Link to="/app" className="flex items-center gap-2">
+                                Try PathoAssist <ArrowRight className="w-4 h-4" />
+                            </Link>
                         </Button>
-                        <Button size="lg" variant="outline" className="h-12 px-8">
-                            <Link to="/contact">Contact Research Team</Link>
+                        <Button size="lg" variant="outline" className="h-12 px-8 border-rose-300 text-rose-700 hover:bg-rose-100">
+                            <Link to="/docs">View Documentation</Link>
                         </Button>
                     </div>
                 </div>

@@ -38,20 +38,20 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                         <Link to="/features" className="hover:text-teal-600 transition-colors">
                             Features
                         </Link>
-                        <Link to="/docs" className="hover:text-teal-600 transition-colors">
-                            Documentation
-                        </Link>
-                        <Link to="/about" className="hover:text-teal-600 transition-colors">
-                            About
-                        </Link>
-                        <Link to="/impact" className="hover:text-teal-600 transition-colors">
-                            Global Impact
+                        <Link to="/wsi-processing" className="hover:text-violet-600 transition-colors">
+                            WSI Processing
                         </Link>
                         <Link to="/tech-stack" className="hover:text-teal-600 transition-colors">
                             Tech Stack
                         </Link>
-                        <Link to="/wsi-processing" className="hover:text-violet-600 transition-colors">
-                            WSI Processing
+                        <Link to="/docs" className="hover:text-teal-600 transition-colors">
+                            Documentation
+                        </Link>
+                        <Link to="/impact" className="hover:text-teal-600 transition-colors">
+                            Global Impact
+                        </Link>
+                        <Link to="/about" className="hover:text-teal-600 transition-colors">
+                            About
                         </Link>
                     </div>
 
