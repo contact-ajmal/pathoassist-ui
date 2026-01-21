@@ -322,13 +322,15 @@ export default function WSIProcessing() {
                     <p className="text-teal-100 mb-8 max-w-xl mx-auto">
                         Upload a Whole Slide Image and watch PathoAssist extract, filter, and analyze the most diagnostically relevant regions in seconds.
                     </p>
-                    <Link
-                        to="/app"
+                    <a
+                        href="https://www.linkedin.com/in/ajmalnazirbaba/"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 bg-white text-teal-700 font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-teal-50 transition-colors"
                     >
-                        Launch Application
+                        Request a Demo on LinkedIn
                         <ArrowRight className="w-4 h-4" />
-                    </Link>
+                    </a>
                 </div>
             </section>
 
