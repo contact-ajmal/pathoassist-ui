@@ -12,7 +12,7 @@ export default function Landing() {
             description: "High-performance whole slide image viewer supporting .svs and .ndpi formats with deep zoom capabilities."
         },
         {
-            icon: <Layers className="h-6 w-6 text-violet-600" />,
+            icon: <Layers className="h-6 w-6 text-teal-600" />,
             title: "WSI Processing Deep Dive",
             description: "Learn how PathoAssist processes gigapixel slides using OpenSlide, Otsu's thresholding, and smart patch selection.",
             link: "/wsi-processing"
@@ -109,7 +109,7 @@ export default function Landing() {
                                     <h3 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h3>
                                     <p className="text-slate-600 leading-relaxed">{feature.description}</p>
                                     {feature.link && (
-                                        <div className="mt-4 text-sm font-semibold text-violet-600 flex items-center gap-1">
+                                        <div className="mt-4 text-sm font-semibold text-teal-600 flex items-center gap-1">
                                             Learn more <ArrowRight className="w-4 h-4" />
                                         </div>
                                     )}
@@ -123,7 +123,7 @@ export default function Landing() {
                                         whileInView={{ opacity: 1, y: 0 }}
                                         viewport={{ once: true }}
                                         transition={{ delay: idx * 0.1 }}
-                                        className="p-8 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 hover:border-violet-300 hover:shadow-lg transition-all cursor-pointer h-full"
+                                        className="p-8 rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200 hover:border-teal-300 hover:shadow-lg transition-all cursor-pointer h-full"
                                     >
                                         {CardContent}
                                     </motion.div>

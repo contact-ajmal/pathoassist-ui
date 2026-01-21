@@ -292,7 +292,7 @@ export default function TechStack() {
             </section>
 
             {/* WSI Processing Banner Link */}
-            <section className="py-16 bg-gradient-to-r from-violet-600 to-purple-600 text-white">
+            <section className="py-16 bg-gradient-to-r from-teal-600 to-emerald-600 text-white">
                 <div className="container mx-auto px-4">
                     <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="flex items-center gap-4">
@@ -301,12 +301,12 @@ export default function TechStack() {
                             </div>
                             <div>
                                 <h2 className="text-2xl font-bold mb-1">WSI Processing Deep Dive</h2>
-                                <p className="text-violet-200">Learn how we process gigapixel slides using OpenSlide, Otsu's thresholding, and intelligent patch selection.</p>
+                                <p className="text-teal-100">Learn how we process gigapixel slides using OpenSlide, Otsu's thresholding, and intelligent patch selection.</p>
                             </div>
                         </div>
                         <Link
                             to="/wsi-processing"
-                            className="bg-white text-violet-700 font-bold px-6 py-3 rounded-lg hover:bg-violet-50 transition-colors flex items-center gap-2 shrink-0"
+                            className="bg-white text-teal-700 font-bold px-6 py-3 rounded-lg hover:bg-teal-50 transition-colors flex items-center gap-2 shrink-0"
                         >
                             Explore →
                         </Link>
