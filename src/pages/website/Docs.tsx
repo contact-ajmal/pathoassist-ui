@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { WebsiteLayout } from "@/layouts/WebsiteLayout";
-import { Book, Code, Terminal, Server, Shield, Cpu, Activity, FileText, CheckCircle2, AlertTriangle, Loader2, XCircle } from "lucide-react";
+import { Book, BookOpen, Code, Terminal, Server, Shield, Cpu, Activity, FileText, CheckCircle2, AlertTriangle, Loader2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/lib/api";
@@ -287,15 +287,25 @@ export default function Docs() {
                             </div>
                         </div>
 
-                        {/* Open Source Note */}
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
-                            <div className="flex items-start gap-3">
-                                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                        {/* Research & Educational Access */}
+                        <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-6">
+                            <div className="flex items-start gap-4">
+                                <div className="bg-indigo-100 p-2 rounded-lg shrink-0">
+                                    <BookOpen className="h-5 w-5 text-indigo-600" />
+                                </div>
                                 <div>
-                                    <h4 className="font-bold text-amber-800 mb-1">Developer Access</h4>
-                                    <p className="text-sm text-amber-700">
-                                        PathoAssist is available as open-source for research and educational purposes. Developers can access the public repository on GitHub. Technical documentation is included in the repository.
+                                    <h4 className="font-bold text-indigo-900 mb-2">Research & Educational Access</h4>
+                                    <p className="text-sm text-indigo-700 mb-4">
+                                        While PathoAssist is not publicly available as open-source, we actively support the research and academic community. If you are a researcher, educator, or student working on digital pathology or AI-assisted diagnostics, we would be happy to discuss access to the codebase for non-commercial purposes.
                                     </p>
+                                    <a
+                                        href="https://www.linkedin.com/in/ajmalnazirbaba/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+                                    >
+                                        Request Research Access →
+                                    </a>
                                 </div>
                             </div>
                         </div>
