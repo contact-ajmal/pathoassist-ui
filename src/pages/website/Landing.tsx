@@ -1,7 +1,7 @@
 import { WebsiteLayout } from "@/layouts/WebsiteLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Microscope, Brain, FileText, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Microscope, Brain, FileText, CheckCircle2, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Landing() {
@@ -10,6 +10,12 @@ export default function Landing() {
             icon: <Microscope className="h-6 w-6 text-teal-600" />,
             title: "WSI Viewer",
             description: "High-performance whole slide image viewer supporting .svs and .ndpi formats with deep zoom capabilities."
+        },
+        {
+            icon: <Layers className="h-6 w-6 text-violet-600" />,
+            title: "WSI Processing Deep Dive",
+            description: "Learn how PathoAssist processes gigapixel slides using OpenSlide, Otsu's thresholding, and smart patch selection.",
+            link: "/wsi-processing"
         },
         {
             icon: <Brain className="h-6 w-6 text-teal-600" />,
@@ -93,23 +99,48 @@ export default function Landing() {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {features.map((feature, idx) => (
-                            <motion.div
-                                key={idx}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: idx * 0.1 }}
-                                className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-100 hover:shadow-lg transition-all"
-                            >
-                                <div className="mb-6 p-4 bg-white rounded-xl inline-block shadow-sm">
-                                    {feature.icon}
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h3>
-                                <p className="text-slate-600 leading-relaxed">{feature.description}</p>
-                            </motion.div>
-                        ))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {features.map((feature, idx) => {
+                            const CardContent = (
+                                <>
+                                    <div className="mb-6 p-4 bg-white rounded-xl inline-block shadow-sm">
+                                        {feature.icon}
+                                    </div>
+                                    <h3 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h3>
+                                    <p className="text-slate-600 leading-relaxed">{feature.description}</p>
+                                    {feature.link && (
+                                        <div className="mt-4 text-sm font-semibold text-violet-600 flex items-center gap-1">
+                                            Learn more <ArrowRight className="w-4 h-4" />
+                                        </div>
+                                    )}
+                                </>
+                            );
+
+                            return feature.link ? (
+                                <Link to={feature.link} key={idx}>
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: idx * 0.1 }}
+                                        className="p-8 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 hover:border-violet-300 hover:shadow-lg transition-all cursor-pointer h-full"
+                                    >
+                                        {CardContent}
+                                    </motion.div>
+                                </Link>
+                            ) : (
+                                <motion.div
+                                    key={idx}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    className="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:border-teal-100 hover:shadow-lg transition-all"
+                                >
+                                    {CardContent}
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>

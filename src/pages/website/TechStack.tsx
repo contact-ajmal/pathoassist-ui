@@ -1,5 +1,6 @@
 import { WebsiteLayout } from "@/layouts/WebsiteLayout";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Database, Cpu, Eye, FileText, Layers, Zap, Globe, Code2, Server, Brain, Microscope, Sliders } from "lucide-react";
 
 const techCategories = [
@@ -290,205 +291,25 @@ export default function TechStack() {
                 </div>
             </section>
 
-            {/* WSI Processing Deep Dive */}
-            <section className="py-20 bg-gradient-to-br from-violet-900 via-purple-900 to-indigo-900 text-white overflow-hidden">
+            {/* WSI Processing Banner Link */}
+            <section className="py-16 bg-gradient-to-r from-violet-600 to-purple-600 text-white">
                 <div className="container mx-auto px-4">
-                    <div className="max-w-4xl mx-auto text-center mb-16">
-                        <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-6">
-                            <Microscope className="w-4 h-4 text-violet-300" />
-                            <span className="text-sm font-medium">Deep Dive</span>
-                        </div>
-                        <h2 className="text-3xl lg:text-4xl font-bold mb-6">How WSI Processing Works</h2>
-                        <p className="text-lg text-violet-200 leading-relaxed">
-                            Whole Slide Images are massive (often 1-10+ GB). Here's how PathoAssist efficiently processes them without overloading memory.
-                        </p>
-                    </div>
-
-                    {/* Step 1: Pyramid Structure */}
-                    <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
-                        <div>
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="bg-violet-500 text-white text-sm font-bold px-3 py-1 rounded-full">Step 1</span>
-                                <h3 className="text-2xl font-bold">Understanding the Pyramid</h3>
+                    <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-white/20 p-4 rounded-2xl">
+                                <Microscope className="w-8 h-8" />
                             </div>
-                            <p className="text-violet-200 leading-relaxed mb-4">
-                                WSI files (like <code className="bg-white/10 px-1.5 py-0.5 rounded">.svs</code>, <code className="bg-white/10 px-1.5 py-0.5 rounded">.ndpi</code>) store images as a <strong>multi-resolution pyramid</strong>.
-                                The base level is the full resolution scan, while higher levels are progressively smaller thumbnails.
-                            </p>
-                            <p className="text-violet-200 leading-relaxed">
-                                <strong>OpenSlide</strong> can efficiently access any level without loading the entire file, making it possible to work with multi-gigabyte slides on standard hardware.
-                            </p>
-                        </div>
-                        <div className="flex justify-center">
-                            {/* Pyramid Visual */}
-                            <div className="relative w-64">
-                                {[
-                                    { label: "Level 0", size: "40000×30000", width: "100%", bg: "from-pink-500 to-rose-600" },
-                                    { label: "Level 1", size: "10000×7500", width: "75%", bg: "from-amber-500 to-orange-600" },
-                                    { label: "Level 2", size: "2500×1875", width: "50%", bg: "from-emerald-500 to-teal-600" },
-                                    { label: "Level 3", size: "625×469", width: "25%", bg: "from-sky-500 to-blue-600" },
-                                ].map((level, idx) => (
-                                    <div
-                                        key={level.label}
-                                        className={`bg-gradient-to-r ${level.bg} rounded-lg shadow-lg mx-auto mb-2 p-3 text-center transition-all hover:scale-105`}
-                                        style={{ width: level.width }}
-                                    >
-                                        <span className="text-xs font-bold block">{level.label}</span>
-                                        <span className="text-[10px] opacity-75">{level.size}</span>
-                                    </div>
-                                ))}
-                                <p className="text-center text-xs text-violet-300 mt-4">Multi-Resolution Pyramid Structure</p>
+                            <div>
+                                <h2 className="text-2xl font-bold mb-1">WSI Processing Deep Dive</h2>
+                                <p className="text-violet-200">Learn how we process gigapixel slides using OpenSlide, Otsu's thresholding, and intelligent patch selection.</p>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Step 2: Tile Extraction */}
-                    <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
-                        <div className="order-2 lg:order-1 flex justify-center">
-                            {/* Tile Grid Visual */}
-                            <div className="bg-white/5 border border-white/10 rounded-xl p-4 backdrop-blur-sm">
-                                <div className="grid grid-cols-6 gap-1 w-48 h-48 mx-auto">
-                                    {Array.from({ length: 36 }).map((_, i) => {
-                                        const isTissue = [7, 8, 13, 14, 15, 19, 20, 21, 25, 26, 27].includes(i);
-                                        return (
-                                            <div
-                                                key={i}
-                                                className={`rounded-sm transition-all ${isTissue ? 'bg-gradient-to-br from-pink-400 to-rose-500 shadow-sm' : 'bg-slate-700/50'}`}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                                <div className="flex items-center justify-center gap-4 mt-4 text-xs">
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-3 h-3 rounded-sm bg-gradient-to-br from-pink-400 to-rose-500" />
-                                        <span className="text-violet-300">Tissue</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-3 h-3 rounded-sm bg-slate-700/50" />
-                                        <span className="text-violet-300">Background</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="order-1 lg:order-2">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="bg-violet-500 text-white text-sm font-bold px-3 py-1 rounded-full">Step 2</span>
-                                <h3 className="text-2xl font-bold">Tile Extraction</h3>
-                            </div>
-                            <p className="text-violet-200 leading-relaxed mb-4">
-                                Using <code className="bg-white/10 px-1.5 py-0.5 rounded">slide.read_region()</code>, we divide the slide into a grid of small patches (typically 224×224 or 512×512 pixels).
-                            </p>
-                            <p className="text-violet-200 leading-relaxed">
-                                This allows the AI to analyze specific regions independently, rather than attempting to process the entire multi-gigapixel image at once.
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Step 3: Tissue Detection */}
-                    <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
-                        <div>
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="bg-violet-500 text-white text-sm font-bold px-3 py-1 rounded-full">Step 3</span>
-                                <h3 className="text-2xl font-bold">Tissue Detection (Otsu's Thresholding)</h3>
-                            </div>
-                            <p className="text-violet-200 leading-relaxed mb-4">
-                                Most of a pathology slide is empty glass (white background). We use <strong>Otsu's Binarization</strong> (via OpenCV) to automatically separate tissue from background.
-                            </p>
-                            <div className="bg-white/5 border border-white/10 rounded-lg p-4 font-mono text-sm">
-                                <p className="text-violet-300">
-                                    <span className="text-emerald-400">cv2.threshold</span>(gray, 0, 255,
-                                </p>
-                                <p className="text-violet-300 pl-4">
-                                    cv2.THRESH_BINARY + <span className="text-amber-400">cv2.THRESH_OTSU</span>)
-                                </p>
-                            </div>
-                            <p className="text-violet-200 leading-relaxed mt-4">
-                                Patches with less than 5% tissue are discarded, saving compute time and improving AI focus.
-                            </p>
-                        </div>
-                        <div className="flex justify-center">
-                            {/* Otsu Visual */}
-                            <div className="flex gap-4 items-end">
-                                <div className="text-center">
-                                    <div className="w-24 h-24 rounded-lg bg-gradient-to-br from-pink-200 via-white to-pink-100 border-2 border-white/30 mb-2 flex items-center justify-center overflow-hidden">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full opacity-70" />
-                                    </div>
-                                    <span className="text-xs text-violet-300">Original</span>
-                                </div>
-                                <div className="text-2xl text-violet-400 pb-8">→</div>
-                                <div className="text-center">
-                                    <div className="w-24 h-24 rounded-lg bg-white border-2 border-white/30 mb-2 flex items-center justify-center overflow-hidden">
-                                        <div className="w-12 h-12 bg-black rounded-full" />
-                                    </div>
-                                    <span className="text-xs text-violet-300">Binary Mask</span>
-                                </div>
-                                <div className="text-2xl text-violet-400 pb-8">→</div>
-                                <div className="text-center">
-                                    <div className="w-24 h-24 rounded-lg bg-emerald-500/20 border-2 border-emerald-400 mb-2 flex items-center justify-center">
-                                        <span className="text-2xl font-bold text-emerald-400">78%</span>
-                                    </div>
-                                    <span className="text-xs text-violet-300">Tissue Ratio</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Step 4: Variance Scoring */}
-                    <div className="grid lg:grid-cols-2 gap-12 items-center">
-                        <div className="order-2 lg:order-1 flex justify-center">
-                            {/* Scoring Visual */}
-                            <div className="space-y-3 w-full max-w-xs">
-                                {[
-                                    { label: "Patch #12", variance: 0.87, tissue: 0.92, score: 0.89, top: true },
-                                    { label: "Patch #5", variance: 0.72, tissue: 0.85, score: 0.78, top: true },
-                                    { label: "Patch #31", variance: 0.45, tissue: 0.68, score: 0.56, top: false },
-                                    { label: "Patch #8", variance: 0.12, tissue: 0.35, score: 0.23, top: false },
-                                ].map((patch, idx) => (
-                                    <div
-                                        key={patch.label}
-                                        className={`p-3 rounded-lg border transition-all ${patch.top ? 'bg-emerald-500/10 border-emerald-400/50' : 'bg-white/5 border-white/10'}`}
-                                    >
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="font-semibold text-sm">{patch.label}</span>
-                                            {patch.top && <span className="text-xs bg-emerald-500 text-white px-2 py-0.5 rounded-full">Selected</span>}
-                                        </div>
-                                        <div className="flex gap-4 text-xs">
-                                            <div>
-                                                <span className="text-violet-400">Variance:</span> <span className="text-white font-mono">{(patch.variance * 100).toFixed(0)}%</span>
-                                            </div>
-                                            <div>
-                                                <span className="text-violet-400">Tissue:</span> <span className="text-white font-mono">{(patch.tissue * 100).toFixed(0)}%</span>
-                                            </div>
-                                            <div>
-                                                <span className="text-violet-400">Score:</span> <span className="text-amber-400 font-bold font-mono">{(patch.score * 100).toFixed(0)}%</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="order-1 lg:order-2">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="bg-violet-500 text-white text-sm font-bold px-3 py-1 rounded-full">Step 4</span>
-                                <h3 className="text-2xl font-bold">Smart Patch Selection</h3>
-                            </div>
-                            <p className="text-violet-200 leading-relaxed mb-4">
-                                Not all tissue is equally "interesting" to the AI. We calculate a <strong>Combined Score</strong> based on:
-                            </p>
-                            <ul className="space-y-2 text-violet-200 mb-4">
-                                <li className="flex items-start gap-2">
-                                    <span className="text-amber-400 mt-1">•</span>
-                                    <span><strong>Color Variance:</strong> High variance indicates complex cellular structures (nuclei, atypia).</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="text-amber-400 mt-1">•</span>
-                                    <span><strong>Tissue Density:</strong> Patches with more tissue are more likely to contain diagnostic features.</span>
-                                </li>
-                            </ul>
-                            <p className="text-violet-200 leading-relaxed">
-                                Only the <strong>Top-K</strong> patches (e.g., top 10) are sent to MedGemma for analysis, ensuring efficiency without sacrificing accuracy.
-                            </p>
-                        </div>
+                        <Link
+                            to="/wsi-processing"
+                            className="bg-white text-violet-700 font-bold px-6 py-3 rounded-lg hover:bg-violet-50 transition-colors flex items-center gap-2 shrink-0"
+                        >
+                            Explore →
+                        </Link>
                     </div>
                 </div>
             </section>
