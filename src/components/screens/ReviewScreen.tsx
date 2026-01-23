@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Edit3, Info, History, RefreshCw, Loader2, Brain } from 'lucide-react';
+import { AlertTriangle, Edit3, Info, History, RefreshCw, Loader2, Brain, FileText, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -12,6 +12,8 @@ import { useCase } from '@/contexts/CaseContext';
 import { getReport } from '@/lib/api';
 import type { ConfidenceLevel } from '@/types/api';
 import { FindingsViewer } from '@/components/report/FindingsViewer';
+import { PathoCopilot } from '@/components/copilot/PathoCopilot';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ReviewScreenProps {
   onProceed: () => void;
@@ -171,7 +173,8 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
 
     // Parse ROI index from visual evidence
     if (field.visual_evidence) {
-      const match = field.visual_evidence.match(/ROI #(\d+)/i);
+      // Support ROI #1, ROI 1, Region 1, Patch 1
+      const match = field.visual_evidence.match(/(?:ROI|Region|Patch)\s*#?(\d+)/i);
       if (match) {
         const index = parseInt(match[1]) - 1; // 1-based to 0-based
         setActiveROIIndex(index);
@@ -270,37 +273,55 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
         )}
       </div>
 
-      {/* RIGHT PANEL: Final Narrative Report */}
-      <div className="w-full lg:w-[400px] flex flex-col bg-white h-[400px] lg:h-auto border-l shadow-xl z-10">
-        <div className="h-14 border-b px-6 flex items-center justify-between shrink-0 bg-slate-50">
-          <div>
-            <h2 className="font-semibold text-sm text-slate-700">Final Narrative</h2>
-            <p className="text-[10px] text-slate-400">Ready for Sign-out</p>
+      {/* RIGHT PANEL: Final Narrative & Copilot */}
+      <div className="w-full lg:w-[450px] flex flex-col bg-white h-[400px] lg:h-auto border-l shadow-xl z-10">
+        <Tabs defaultValue="copilot" className="flex flex-col h-full">
+          <div className="h-14 border-b px-2 flex items-center justify-between shrink-0 bg-slate-50">
+            <TabsList className="grid w-[200px] grid-cols-2">
+              <TabsTrigger value="narrative" className="text-xs">
+                <FileText className="w-3.5 h-3.5 mr-1.5" />
+                Report
+              </TabsTrigger>
+              <TabsTrigger value="copilot" className="text-xs">
+                <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+                Copilot
+              </TabsTrigger>
+            </TabsList>
+            <Button size="sm" variant="ghost" className="h-8 text-xs text-slate-500">
+              <Edit3 className="w-3.5 h-3.5 mr-1" />
+              Edit
+            </Button>
           </div>
-          <Button size="sm" variant="ghost" className="h-8">
-            <Edit3 className="w-3.5 h-3.5 mr-1" />
-            Edit Mode
-          </Button>
-        </div>
 
-        <div className="flex-1 p-0">
-          <Textarea
-            value={narrative}
-            onChange={(e) => setNarrative(e.target.value)}
-            className="w-full h-full resize-none border-0 focus-visible:ring-0 rounded-none p-6 font-mono text-sm leading-relaxed"
-            placeholder="Generating narrative..."
-          />
-        </div>
+          <TabsContent value="narrative" className="flex-1 flex flex-col p-0 m-0 data-[state=active]:flex overflow-hidden">
+            <div className="flex-1 relative">
+              <Textarea
+                value={narrative}
+                onChange={(e) => setNarrative(e.target.value)}
+                className="w-full h-full resize-none border-0 focus-visible:ring-0 rounded-none p-6 font-mono text-sm leading-relaxed absolute inset-0"
+                placeholder="Generating narrative..."
+              />
+            </div>
+            <div className="p-4 border-t bg-slate-50 space-y-3 shrink-0">
+              <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 text-xs rounded border border-amber-100">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <p>{report?.disclaimer || "AI-generated. Verify before signing out."}</p>
+              </div>
+              <Button className="w-full bg-teal-600 hover:bg-teal-700" onClick={onProceed}>
+                Approve & Export Report
+              </Button>
+            </div>
+          </TabsContent>
 
-        <div className="p-4 border-t bg-slate-50 space-y-3">
-          <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 text-xs rounded border border-amber-100">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            <p>{report?.disclaimer || "AI-generated. Verify before signing out."}</p>
-          </div>
-          <Button className="w-full bg-teal-600 hover:bg-teal-700" onClick={onProceed}>
-            Approve & Export Report
-          </Button>
-        </div>
+          <TabsContent value="copilot" className="flex-1 flex flex-col p-0 m-0 data-[state=active]:flex overflow-hidden bg-slate-50">
+            <PathoCopilot
+              className="border-0"
+              onUpdateReport={(text) => {
+                setNarrative(prev => prev + "\n" + text);
+              }}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

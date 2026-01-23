@@ -60,6 +60,13 @@ FINDINGS:
    Evidence: [Specific visual feature, e.g., "Enlarged nuclei in ROI #3", "Cribriform architecture"]
    Details: [Elaboration]
 
+STRUCTURED OBSERVATIONS:
+- Cellularity: [High/Moderate/Low] - [Observation]
+- Nuclear Features: [Description of atypia, pleomorphism]
+- Mitosis: [Description of activity]
+- Necrosis: [Present/Absent] - [Description]
+- Inflammation: [Description of infiltrate]
+
 DIFFERENTIAL DIAGNOSIS:
 - [Condition A]: [Likelihood] - [Reasoning based on image+text]
 - [Condition B]: [Likelihood] - [Reasoning]
@@ -296,7 +303,7 @@ class PromptBuilder:
         # Handling variations like bullets, bolding, etc.
         pattern = r"[-•*]\s*([^\:]+?)\s*:\s*([^\s-]+(?:[^\-]+)?)\s*[-–]\s*(.+)"
         
-        for line in section_text.split('\n'):
+        for line in section_text.split('\\n'):
             line = line.strip()
             if not line:
                 continue
@@ -372,19 +379,45 @@ class PromptBuilder:
         if not result["tissue_type"]:
             result["tissue_type"] = "Mixed tissue specimen"
 
-        # Extract findings with flexible patterns
+        # 1. Extract specific structured observations (Priority)
+        # We look for "Key: Value" patterns first
+        observation_patterns = {
+            "Cellularity": r"(?:Cellularity|Cell density)[:\s]+(?:\*\*)?\s*(?:Cellularity[:\s]*)?([^\n]+)",
+            "Nuclear Features": r"(?:Nuclear Features|Nuclear Atypia)[:\s]+(?:\*\*)?\s*(?:Nuclear Features[:\s]*)?([^\n]+)",
+            "Mitosis": r"(?:Mitosis|Mitotic Activity)[:\s]+(?:\*\*)?\s*(?:Mitosis[:\s]*)?([^\n]+)",
+            "Necrosis": r"Necrosis[:\s]+(?:\*\*)?\s*(?:Necrosis[:\s]*)?([^\n]+)",
+            "Inflammation": r"Inflammation[:\s]+(?:\*\*)?\s*(?:Inflammation[:\s]*)?([^\n]+)"
+        }
+        
+        for category, pattern in observation_patterns.items():
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                obs_text = match.group(1).replace('**', '').strip()
+                # Handle leading colon/redundancy if model repeats keys
+                obs_text = re.sub(r"^(?:Cellularity|Nuclear Features|Mitosis|Necrosis|Inflammation)[:\s]*", "", obs_text, flags=re.IGNORECASE).strip()
+                
+                # Filter out empty/useless responses
+                if obs_text.lower() not in ["not assessed", "unknown", "none", "", "and"] and len(obs_text) > 3:
+                    # Check duplication
+                    if not any(category in f.get("category", "") for f in result["findings"]):
+                        result["findings"].append({
+                            "text": f"{category}: {obs_text}",
+                            "category": category,
+                            "confidence": "HIGH",
+                            "visual_evidence": None # Global assessment
+                        })
+
+        # 2. Extract general numbered findings
         finding_patterns = [
-            r"(\d+\.)\s*\[?([^\]:\n]+)\]?[:\s]+([^\n]+)(?:\n\s*Confidence:[^\n]+)?(?:\n\s*Evidence:\s*([^\n]+))?",  # Capture Evidence group
+            r"(\d+\.)\s*\[?([^\]:\n]+)\]?[:\s]+(?:\*\*)?\s*([^\n]+)(?:\n\s*Confidence:[^\n]+)?(?:\n\s*Evidence:\s*([^\n]+))?", 
         ]
         
         for pattern in finding_patterns:
             matches = re.findall(pattern, text, re.IGNORECASE)
             for match in matches:
-                # Handle varying group counts depending on regex
                 if len(match) >= 3 and isinstance(match, tuple):
-                     # Standard match: Group 1=Num, 2=Cat, 3=Text, 4=Evidence (Optional)
                     category = match[1].strip()
-                    finding_text = match[2].strip()
+                    finding_text = match[2].replace('**', '').strip()
                     evidence = match[3].strip() if len(match) > 3 and match[3] else None
                     
                     if len(finding_text) > 5:
@@ -395,36 +428,32 @@ class PromptBuilder:
                             "visual_evidence": evidence 
                         })
 
-            if result["findings"]:
-                break
-        
-        # Fallback finding extraction if regex failed or used different format
-        if not result["findings"]:
-             # Try simpler pattern without evidence capture
-             simple_pattern = r"(?:Finding|Observation)\s*\d*[:\s]+([^\n]+)"
-             matches = re.findall(simple_pattern, text, re.IGNORECASE)
-             for m in matches:
-                 if isinstance(m, tuple):
-                     finding_text = "".join(m).strip()
-                 else:
-                    finding_text = m.strip()
+        # 3. Fallback: Key sentences (Only if findings are sparse)
+        if len(result["findings"]) < 3:
+            sentences = text.split('.')
+            for sentence in sentences:
+                sentence = sentence.replace('**', '').strip()
+                if len(sentence) > 30 and any(kw in sentence.lower() for kw in ['cells', 'tissue', 'nuclei', 'regions', 'features', 'observed', 'shows', 'appear', 'structure']):
+                    # Check if already covered
+                    if not any(sentence[:20] in f["text"] for f in result["findings"]):
+                        result["findings"].append({
+                            "text": sentence,
+                            "confidence": "MEDIUM",
+                            "category": "General Observation"
+                        })
+                    if len(result["findings"]) >= 5:
+                        break
 
-                 if len(finding_text) > 10:
-                    result["findings"].append({
-                        "text": finding_text,
-                        "confidence": "MEDIUM"
-                    })
-                    
         # If still no findings, extract key sentences that look like findings
         if not result["findings"]:
             sentences = text.split('.')
             for sentence in sentences:
                 sentence = sentence.strip()
-                # Look for sentences that look like findings
                 if len(sentence) > 30 and any(kw in sentence.lower() for kw in ['cells', 'tissue', 'nuclei', 'regions', 'features', 'observed', 'shows', 'appear', 'structure']):
                     result["findings"].append({
                         "text": sentence,
-                        "confidence": "MEDIUM"
+                        "confidence": "MEDIUM",
+                        "category": "General Observation"
                     })
                     if len(result["findings"]) >= 3:
                         break
@@ -451,7 +480,7 @@ class PromptBuilder:
             result["summary"] = f"Analysis identified {len(result['findings'])} notable findings in the tissue specimen."
         elif not result["summary"]:
             # Extract first meaningful paragraph
-            paragraphs = [p.strip() for p in text.split('\n\n') if len(p.strip()) > 50]
+            paragraphs = [p.strip() for p in text.split('\\n\\n') if len(p.strip()) > 50]
             if paragraphs:
                 result["summary"] = paragraphs[0][:500]
 

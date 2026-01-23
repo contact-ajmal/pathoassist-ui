@@ -9,6 +9,7 @@ import type {
   ROIResult,
   AnalysisResult,
   StructuredReport,
+  ChatMessage,
 } from '@/types/api';
 import { PatientRecord } from '@/types/patient';
 
@@ -23,6 +24,7 @@ interface CaseState {
   report: StructuredReport | null;
   patientData: PatientRecord | null;
   clinicalContext: string | null;
+  chatMessages: ChatMessage[];  // Persistent chat history
 }
 
 interface CaseContextType extends CaseState {
@@ -37,6 +39,8 @@ interface CaseContextType extends CaseState {
   setReport: (report: StructuredReport) => void;
   setPatientData: (patient: PatientRecord | null) => void;
   setClinicalContext: (context: string | null) => void;
+  setChatMessages: (messages: ChatMessage[]) => void;
+  addChatMessage: (message: ChatMessage) => void;
   resetCase: () => void;
 }
 
@@ -51,6 +55,7 @@ const initialState: CaseState = {
   report: null,
   patientData: null,
   clinicalContext: null,
+  chatMessages: [],
 };
 
 const CaseContext = createContext<CaseContextType | undefined>(undefined);
@@ -98,6 +103,14 @@ export function CaseProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, clinicalContext }));
   }, []);
 
+  const setChatMessages = useCallback((chatMessages: ChatMessage[]) => {
+    setState((prev) => ({ ...prev, chatMessages }));
+  }, []);
+
+  const addChatMessage = useCallback((message: ChatMessage) => {
+    setState((prev) => ({ ...prev, chatMessages: [...prev.chatMessages, message] }));
+  }, []);
+
   const resetCase = useCallback(() => {
     setState(initialState);
   }, []);
@@ -116,6 +129,8 @@ export function CaseProvider({ children }: { children: React.ReactNode }) {
         setReport,
         setPatientData,
         setClinicalContext,
+        setChatMessages,
+        addChatMessage,
         resetCase,
       }}
     >

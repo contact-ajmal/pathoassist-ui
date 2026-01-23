@@ -15,6 +15,8 @@ import type {
   CaseStatusResponse,
   CaseSummary,
   HealthResponse,
+  ChatMessage,
+  ChatResponse,
 } from '@/types/api';
 
 export const API_BASE_URL = 'http://127.0.0.1:8007';
@@ -301,6 +303,32 @@ export async function uploadTemplate(file: File): Promise<{ message: string; fil
     body: formData,
   });
   return handleResponse<{ message: string; filename: string }>(response);
+}
+
+export async function sendChatMessage(
+  caseId: string,
+  messages: ChatMessage[],
+  context?: any
+): Promise<ChatResponse> {
+  // Check if we're using a real backend or need to mock
+  try {
+    const response = await fetch(`${API_BASE_URL}/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ case_id: caseId, messages, context }),
+    });
+
+    if (!response.ok) {
+      // Fallback for demo/missing endpoint
+      throw new Error("Chat endpoint not available");
+    }
+    return handleResponse<ChatResponse>(response);
+  } catch (err) {
+    console.error("Chat request failed:", err);
+    throw err;
+  }
 }
 
 export { ApiError };

@@ -16,6 +16,7 @@ from ..models import (
     ConfidenceLevel,
     TissueType,
     PatchInfo,
+    DifferentialDiagnosis,
 )
 from ..utils import get_logger, log_inference
 from .prompts import PromptBuilder
@@ -509,6 +510,7 @@ class InferenceEngine:
                     finding=finding_text,
                     confidence=confidence_level,
                     confidence_score=confidence_score,
+                    visual_evidence=finding_data.get("visual_evidence"),
                 )
                 findings.append(finding)
 
@@ -536,9 +538,6 @@ class InferenceEngine:
             # Parse Differential Diagnosis
             differential_diagnosis = []
             for dd in parsed.get("differential_diagnosis", []):
-                # Import DifferentialDiagnosis model locally to avoid circular imports if any
-                from ..models import DifferentialDiagnosis, ConfidenceLevel
-                
                 # Normalize confidence to enum
                 conf_map = {"HIGH": ConfidenceLevel.HIGH, "MEDIUM": ConfidenceLevel.MEDIUM, "LOW": ConfidenceLevel.LOW}
                 likelihood = conf_map.get(dd.get("likelihood", "MEDIUM"), ConfidenceLevel.MEDIUM)
@@ -593,6 +592,266 @@ class InferenceEngine:
         except Exception as e:
             logger.error(f"Analysis failed for case {case_id}: {e}")
             raise
+
+    def chat(
+        self,
+        case_id: str,
+        messages: List[Dict[str, Any]],
+        context: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Chat with the AI assistant about a case.
+        
+        Args:
+            case_id: Case identifier
+            messages: List of chat messages
+            context: Optional context
+            
+        Returns:
+            Chat response
+        """
+        if not self.is_loaded:
+            raise RuntimeError("Model not loaded")
+
+        logger.info(f"Chat request for case {case_id} with {len(messages)} messages")
+
+        # Extract last user message
+        last_msg = messages[-1]["content"] if messages else ""
+        
+        # Build system prompt for chat
+        system_text = self.prompt_builder.get_system_prompt()
+        if context:
+            # Add context to system prompt with proper formatting
+            context_str = "\n\nCASE CONTEXT (Use this to answer questions about the analysis):\n"
+            
+            if context.get("patient"):
+                patient = context["patient"]
+                if isinstance(patient, dict):
+                    patient_str = f"Age: {patient.get('age', 'Unknown')}, Gender: {patient.get('gender', 'Unknown')}"
+                    if patient.get('history'):
+                        patient_str += f", History: {patient.get('history')}"
+                else:
+                    patient_str = str(patient)
+                context_str += f"Patient: {patient_str}\n"
+            
+            if context.get("findings"):
+                findings = context["findings"]
+                if isinstance(findings, list):
+                    findings_str = "\n".join([
+                        f"  - {f.get('category', 'Finding')}: {f.get('finding', f.get('text', str(f)))}"
+                        for f in findings[:10]  # Limit to 10 findings
+                    ])
+                else:
+                    findings_str = str(findings)
+                context_str += f"Analysis Findings:\n{findings_str}\n"
+            
+            if context.get("rois"):
+                context_str += f"ROIs Analyzed: {context['rois']} regions\n"
+                
+            if context.get("current_report"):
+                context_str += f"Current Report Draft:\n{context['current_report'][:500]}\n"
+            
+            system_text += context_str
+        
+        # Determine suggested actions based on content (simple heuristic)
+        actions = []
+        if "update" in last_msg.lower() and "report" in last_msg.lower():
+            actions.append({
+                "type": "update_report",
+                "label": "Update Report",
+                "payload": "Based on the discussion, I recommend adding this observation to the report." 
+            })
+
+        # Run inference
+        try:
+            # Check if we should use remote inference (processor is None in remote mode)
+            if settings.REMOTE_INFERENCE_URL and self.processor is None:
+                # Use remote chat API
+                return self._chat_remote(case_id, messages, system_text, actions)
+            
+            # Local inference fallback (if processor is available)
+            if self.processor is None:
+                raise RuntimeError("Model processor not initialized")
+                
+            # Use simple text generation for now to avoid complex history management with images
+            # Ideally, we would re-feed images, but for performance, we rely on the context provided
+            
+            # Format history
+            formatted_history = ""
+            for msg in messages[:-1]:
+                role = "User" if msg["role"] == "user" else "Assistant"
+                formatted_history += f"{role}: {msg['content']}\n"
+            
+            prompt = f"{system_text}\n\nCHAT HISTORY:\n{formatted_history}\nUser: {last_msg}\nAssistant:"
+            
+            # Use appropriate encoding method
+            if hasattr(self.processor, "apply_chat_template"):
+                # Use simple tokenizer call if available
+                inputs = self.processor(text=prompt, return_tensors="pt")
+            elif hasattr(self.processor, "tokenizer"):
+                 # Multimodal processor
+                inputs = self.processor(text=prompt, return_tensors="pt")
+            else:
+                 # Standard tokenizer
+                inputs = self.processor(prompt, return_tensors="pt")
+
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=500,
+                    do_sample=True,
+                    temperature=0.7,
+                )
+            
+            response_text = self.processor.decode(outputs[0], skip_special_tokens=True)
+            
+            # Extract just the new response
+            if prompt in response_text:
+                response_text = response_text[len(prompt):].strip()
+            
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": response_text,
+                    "timestamp": time.time() # This will be formatted by API
+                },
+                "suggested_actions": actions
+            }
+
+        except Exception as e:
+            logger.error(f"Chat failed: {e}")
+            raise e
+
+    def _chat_remote(
+        self,
+        case_id: str,
+        messages: List[Dict[str, Any]],
+        system_text: str,
+        actions: List[Dict]
+    ) -> Dict[str, Any]:
+        """
+        Perform chat using remote inference API with image context.
+        """
+        logger.info(f"Sending chat request to remote API: {settings.REMOTE_INFERENCE_URL}")
+        
+        # Extract last user message
+        last_msg = messages[-1]["content"] if messages else ""
+        
+        # Format history for remote
+        formatted_history = ""
+        for msg in messages[:-1]:
+            role = "User" if msg["role"] == "user" else "Assistant"
+            formatted_history += f"{role}: {msg['content']}\n"
+        
+        text_prompt = f"{system_text}\n\nCHAT HISTORY:\n{formatted_history}\nUser: {last_msg}\nAssistant:"
+        
+        # Load patch images for visual context with per-patch metadata
+        encoded_images = []
+        patch_descriptions = []
+        try:
+            # Try to load ROI patches from the case
+            roi_file = settings.CASES_DIR / case_id / "results" / "roi.json"
+            if roi_file.exists():
+                import json
+                with open(roi_file, "r") as f:
+                    roi_data = json.load(f)
+                
+                patches = roi_data.get("selected_patches", [])
+                max_images = 4  # Limit actual images for performance
+                max_descriptions = 10  # Limit text descriptions to prevent timeout
+                
+                # Sort by variance (most interesting first) and take top N
+                sorted_patches = sorted(patches, key=lambda p: p.get("variance_score", 0), reverse=True)
+                
+                logger.info(f"Total patches: {len(patches)}, showing top {min(len(patches), max_descriptions)} by variance")
+                
+                # Include metadata for top N patches
+                for idx, patch in enumerate(sorted_patches[:max_descriptions]):
+                    patch_id = patch.get("patch_id")
+                    
+                    # Build per-patch description for ALL patches
+                    patch_desc = f"Patch #{idx + 1} (ID: {patch_id})"
+                    coords = patch.get("coordinates", {})
+                    if coords:
+                        patch_desc += f" - Location: ({coords.get('x', 0)}, {coords.get('y', 0)})"
+                    tissue_ratio = patch.get("tissue_ratio", 0)
+                    variance = patch.get("variance_score", 0)
+                    patch_desc += f" - Tissue: {tissue_ratio:.0%}, Variance: {variance:.2f}"
+                    
+                    # Include any pre-analyzed description
+                    if patch.get("description"):
+                        patch_desc += f" - Description: {patch['description']}"
+                    
+                    # Mark if image is included
+                    if len(encoded_images) < max_images:
+                        patch_desc += " [IMAGE ATTACHED]"
+                    
+                    patch_descriptions.append(patch_desc)
+                    
+                    # Only load images for first N patches
+                    if patch_id and len(encoded_images) < max_images:
+                        patch_file = settings.CASES_DIR / case_id / "patches" / f"{patch_id}.png"
+                        if patch_file.exists():
+                            img = Image.open(patch_file).convert("RGB")
+                            if img.size[0] > 224 or img.size[1] > 224:
+                                img = img.resize((224, 224))
+                            
+                            buffered = io.BytesIO()
+                            img.save(buffered, format="JPEG", quality=85)
+                            img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+                            encoded_images.append(img_str)
+                
+                if patch_descriptions:
+                    logger.info(f"Including {len(patch_descriptions)} patch descriptions ({len(encoded_images)} with images) in chat context")
+                    # Add patch context to prompt
+                    patch_context = f"\n\nALL {len(patch_descriptions)} ROI PATCHES (reference by number):\n" + "\n".join(patch_descriptions)
+                    text_prompt = text_prompt.replace("\nUser:", f"{patch_context}\n\nUser:")
+                    
+        except Exception as e:
+            logger.warning(f"Could not load patch images for chat: {e}")
+        
+        # Construct payload with images
+        payload = {
+            "text": text_prompt,
+            "images": encoded_images,  # Now includes actual images
+            "system_prompt": system_text,
+            "parameters": {
+                "max_new_tokens": 500,
+                "temperature": 0.7,
+            }
+        }
+        
+        headers = {"Content-Type": "application/json"}
+        if settings.REMOTE_API_KEY:
+            headers["Authorization"] = f"Bearer {settings.REMOTE_API_KEY}"
+            
+        try:
+            response = requests.post(
+                settings.REMOTE_INFERENCE_URL, 
+                json=payload, 
+                headers=headers,
+                timeout=90  # Increased timeout for chat with images
+            )
+            response.raise_for_status()
+            result = response.json()
+            response_text = result.get("response", "I apologize, but I couldn't generate a response.")
+            
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": response_text,
+                    "timestamp": time.time()
+                },
+                "suggested_actions": actions
+            }
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Remote chat failed: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"API Error Response: {e.response.text}")
+            raise RuntimeError(f"Remote Chat API Error: {str(e)}")
 
     def _parse_tissue_type(self, tissue_str: str) -> TissueType:
         """

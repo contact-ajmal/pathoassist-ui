@@ -27,7 +27,10 @@ from .models import (
     HealthResponse,
     CaseStatus,
     ErrorResponse,
+    ErrorResponse,
     SystemSettings,
+    ChatRequest,
+    ChatResponse,
 )
 from .wsi import WSIProcessor
 from .roi import ROISelector
@@ -608,6 +611,41 @@ async def confirm_roi_selection(selection: ROISelection):
 # ============================================================================
 # AI ANALYSIS
 # ============================================================================
+
+# ============================================================================
+# CHAT
+# ============================================================================
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat_endpoint(request: ChatRequest):
+    """
+    Chat with the AI assistant.
+    """
+    validate_case_id(request.case_id)
+
+    if not inference_engine.is_loaded:
+        raise HTTPException(
+            status_code=503,
+            detail="AI model not loaded. Chat unavailable.",
+        )
+
+    try:
+        # Convert Pydantic models to dicts for engine
+        messages_dicts = [m.model_dump() for m in request.messages]
+        context_dict = request.context
+        
+        response_dict = inference_engine.chat(
+            case_id=request.case_id,
+            messages=messages_dicts,
+            context=context_dict
+        )
+        
+        return response_dict
+        
+    except Exception as e:
+        logger.error(f"Chat failed for case {request.case_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/analyze", response_model=AnalysisResult)
 async def analyze_case(request: AnalysisRequest):

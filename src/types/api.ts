@@ -11,6 +11,30 @@ export type CaseStatus =
   | 'completed'
   | 'failed';
 
+export type ChatRole = 'user' | 'assistant' | 'system';
+
+export interface ChatMessage {
+  role: ChatRole;
+  content: string;
+  timestamp: string;
+  context?: any;
+}
+
+export interface ChatResponse {
+  message: ChatMessage;
+  suggested_actions?: {
+    type: 'update_report' | 'view_roi';
+    payload: any;
+    label: string;
+  }[];
+}
+
+export interface ChatRequest {
+  case_id: string;
+  messages: ChatMessage[];
+  context?: any;
+}
+
 export type TissueType =
   | 'epithelial'
   | 'connective'

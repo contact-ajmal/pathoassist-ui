@@ -100,10 +100,16 @@ class ReportGenerator:
         Returns:
             Cellularity description or None
         """
+        import re
         for finding in findings:
             text = finding.finding.lower()
             if "cellularity" in text or "cell density" in text or "cellular" in text:
-                return finding.finding
+                # Clean redundant prefixes
+                cleaned = re.sub(r'^\s*(?:cellularity|cell density)[:\s]*', '', finding.finding, flags=re.IGNORECASE).strip()
+                # Filter out noise
+                if cleaned.lower() in ["and", "the", "", "not assessed"]:
+                    continue
+                return cleaned if len(cleaned) > 5 else finding.finding
 
         return None
 
@@ -134,10 +140,13 @@ class ReportGenerator:
         Returns:
             Mitotic activity description or None
         """
+        import re
         for finding in findings:
             text = finding.finding.lower()
             if "mitotic" in text or "mitosis" in text or "proliferation" in text:
-                return finding.finding
+                # Clean redundant prefixes
+                cleaned = re.sub(r'^\s*(?:mitosis|mitotic activity|mitotic)[:\s]*', '', finding.finding, flags=re.IGNORECASE).strip()
+                return cleaned if len(cleaned) > 5 else finding.finding
 
         return None
 
@@ -168,10 +177,13 @@ class ReportGenerator:
         Returns:
             Inflammation description or None
         """
+        import re
         for finding in findings:
             text = finding.finding.lower()
             if "inflammation" in text or "inflammatory" in text or "infiltrate" in text:
-                return finding.finding
+                # Clean redundant prefixes
+                cleaned = re.sub(r'^\s*(?:inflammation|inflammatory)[:\s]*', '', finding.finding, flags=re.IGNORECASE).strip()
+                return cleaned if len(cleaned) > 5 else finding.finding
 
         return None
 

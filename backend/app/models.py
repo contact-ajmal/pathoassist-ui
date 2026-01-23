@@ -94,6 +94,9 @@ class PatchInfo(BaseModel):
     variance_score: float
     is_background: bool
     coordinates: Dict[str, int]  # {x, y, width, height}
+    # Per-patch analysis (populated during analysis)
+    description: Optional[str] = None  # Individual patch description
+    features: Optional[Dict[str, Any]] = None  # Extracted features
 
 
 class WSIProcessingResult(BaseModel):
@@ -269,4 +272,43 @@ class SystemSettings(BaseModel):
     temperature: float
     report_template: str
     confidence_threshold: float
+
+
+# ============================================================================
+# CHAT MODELS
+# ============================================================================
+
+class ChatRole(str, Enum):
+    """Role in chat conversation."""
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
+
+
+class ChatMessage(BaseModel):
+    """Single chat message."""
+    role: ChatRole
+    content: str
+    timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    context: Optional[Dict[str, Any]] = None
+
+
+class SuggestedAction(BaseModel):
+    """Action suggested by AI."""
+    type: str # e.g. 'update_report'
+    label: str
+    payload: Any
+
+
+class ChatResponse(BaseModel):
+    """Response from chat endpoint."""
+    message: ChatMessage
+    suggested_actions: List[SuggestedAction] = []
+
+
+class ChatRequest(BaseModel):
+    """Request for chat completion."""
+    case_id: str
+    messages: List[ChatMessage]
+    context: Optional[Dict[str, Any]] = None
 

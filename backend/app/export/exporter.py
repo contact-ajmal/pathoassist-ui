@@ -90,6 +90,8 @@ class ReportExporter:
             output_path: Output file path
             include_images: Whether to include images
         """
+        from reportlab.platypus import Image as RLImage
+        
         # Create PDF document
         doc = SimpleDocTemplate(
             str(output_path),
@@ -187,6 +189,58 @@ class ReportExporter:
                     f"<i>(Confidence: {finding.confidence.value})</i>",
                     body_style
                 ))
+            content.append(Spacer(1, 0.2 * inch))
+
+        # ROI Images Section
+        if include_images:
+            content.append(Paragraph("Region of Interest Images", heading_style))
+            content.append(Paragraph(
+                "The following patches were selected and analyzed from the slide:",
+                body_style
+            ))
+            content.append(Spacer(1, 0.1 * inch))
+            
+            # Load patches from case directory
+            try:
+                import json
+                roi_file = settings.CASES_DIR / report.case_id / "results" / "roi.json"
+                if roi_file.exists():
+                    with open(roi_file, "r") as f:
+                        roi_data = json.load(f)
+                    
+                    patches = roi_data.get("selected_patches", [])
+                    max_patches = 6  # Limit to 6 patches in PDF
+                    
+                    for idx, patch in enumerate(patches[:max_patches], 1):
+                        patch_id = patch.get("patch_id")
+                        if patch_id:
+                            patch_file = settings.CASES_DIR / report.case_id / "patches" / f"{patch_id}.png"
+                            if patch_file.exists():
+                                # Add patch image
+                                img = RLImage(str(patch_file), width=2*inch, height=2*inch)
+                                content.append(img)
+                                
+                                # Add patch info
+                                coords = patch.get("coordinates", {})
+                                tissue_ratio = patch.get("tissue_ratio", 0)
+                                content.append(Paragraph(
+                                    f"<b>Patch {idx}</b> - Location: ({coords.get('x', 0)}, {coords.get('y', 0)}) - "
+                                    f"Tissue: {tissue_ratio:.0%}",
+                                    body_style
+                                ))
+                                content.append(Spacer(1, 0.1 * inch))
+                    
+                    if len(patches) > max_patches:
+                        content.append(Paragraph(
+                            f"<i>({len(patches) - max_patches} additional patches not shown)</i>",
+                            body_style
+                        ))
+                else:
+                    content.append(Paragraph("<i>No ROI data available</i>", body_style))
+            except Exception as e:
+                logger.warning(f"Could not include patch images in PDF: {e}")
+                content.append(Paragraph(f"<i>Error loading patch images</i>", body_style))
+            
             content.append(Spacer(1, 0.2 * inch))
 
         # Narrative summary

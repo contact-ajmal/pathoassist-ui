@@ -25,31 +25,37 @@ export function FindingsViewer({ activePatchIndex, className }: FindingsViewerPr
     const patches = roiResult?.selected_patches || [];
 
     // Auto-focus on active patch
+    // Auto-focus on active patch
     useEffect(() => {
-        if (activePatchIndex !== null && patches[activePatchIndex] && metadata?.dimensions && containerRef.current) {
+        if (activePatchIndex !== null && patches[activePatchIndex] && metadata?.dimensions && containerRef.current && imageRef.current) {
             const patch = patches[activePatchIndex];
-            const { coordinates } = patch; // x, y, width, height (pixels)
+            const { coordinates } = patch;
 
-            // Calculate center percentage
-            const centerX = (coordinates.x + coordinates.width / 2) / metadata.dimensions[0];
-            const centerY = (coordinates.y + coordinates.height / 2) / metadata.dimensions[1];
+            // Target center in percentage (0-1)
+            const targetX = (coordinates.x + coordinates.width / 2) / metadata.dimensions[0];
+            const targetY = (coordinates.y + coordinates.height / 2) / metadata.dimensions[1];
 
-            // Move pan to center this point
-            // Note: Pan logic in ViewerScreen is pixel-based relative to the scaled image center? 
-            // Let's use a simpler approach: Reset pan to 0,0 then offset.
-            // Actually, let's just highlight it for now without complex auto-pan math to avoid bugs, 
-            // unless we reuse the exact math from ViewerScreen. 
+            // Dimensions of the displayed image at 1x scale (zoom=25)
+            const imgRect = imageRef.current.getBoundingClientRect();
+            const containerRect = containerRef.current.getBoundingClientRect();
 
-            // Let's try a simple zoom/center
-            // If zoom is 100%, 0,0 is center. 
-            // We want (centerX, centerY) to be at center.
-            // Displacement needed: (0.5 - centerX) * scaledWidth, (0.5 - centerY) * scaledHeight
+            // Set Zoom
+            const targetZoom = 125; // 5x zoom
+            setZoom(targetZoom);
 
-            // const scaledWidth = imageRef.current?.offsetWidth || 0; 
-            // ... (math is tricky without knowing exact rendered size) ... 
+            // Calculate Pan
+            // We want the target point to be at the center of the container
+            // Current position of target point relative to image center: (target - 0.5) * imgDims
 
-            // Fallback: Just ensure we are zoomed in enough to see details clearly
-            // setZoom(100); 
+            // At zoom=125 (scale 5), the image is 5x larger
+            const scale = targetZoom / 25;
+
+            // Offset needed to center the target point
+            // Pan = (0.5 - targetPct) * (OriginalImageSize * Scale)
+            const panX = (0.5 - targetX) * (imgRect.width * scale);
+            const panY = (0.5 - targetY) * (imgRect.height * scale);
+
+            setPan({ x: panX, y: panY });
         }
     }, [activePatchIndex, patches, metadata]);
 
