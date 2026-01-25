@@ -226,3 +226,61 @@ class WSIProcessor:
 
         finally:
             slide.close()
+
+    async def save_patches(
+        self, 
+        case_id: str, 
+        slide_path: Path, 
+        patches: list[PatchInfo], 
+        output_dir: Path
+    ) -> int:
+        """
+        Extract and save patches as image files.
+
+        Args:
+            case_id: Case identifier
+            slide_path: Path to slide file
+            patches: List of patches to save
+            output_dir: Directory to save patches
+
+        Returns:
+            Number of patches saved
+        """
+        import asyncio
+        
+        slide = self.open_slide(slide_path)
+        count = 0
+        patch_size = settings.PATCH_SIZE
+
+        try:
+            for patch in patches:
+                try:
+                    # Read region
+                    region = slide.read_region(
+                        (patch.x, patch.y), 
+                        patch.level, 
+                        (patch_size, patch_size)
+                    )
+                    
+                    if region.mode == "RGBA":
+                        region = region.convert("RGB")
+                    
+                    # Save
+                    output_path = output_dir / f"{patch.patch_id}.png"
+                    
+                    # Run IO in thread pool
+                    await asyncio.to_thread(region.save, output_path, "PNG")
+                    count += 1
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to save patch {patch.patch_id}: {e}")
+                    continue
+
+                # Yield control periodically
+                if count % 20 == 0:
+                    await asyncio.sleep(0)
+
+            return count
+
+        finally:
+            slide.close()

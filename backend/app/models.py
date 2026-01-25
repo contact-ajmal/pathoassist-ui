@@ -19,6 +19,7 @@ class CaseStatus(str, Enum):
     ANALYZING = "analyzing"
     COMPLETED = "completed"
     FAILED = "failed"
+    OPTIMIZED = "optimized"
 
 
 class TissueType(str, Enum):

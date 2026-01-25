@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { AlertTriangle, Edit3, Info, History, RefreshCw, Loader2, Brain, FileText, MessageSquare } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { AlertTriangle, Edit3, Info, History, RefreshCw, Loader2, Brain, FileText, MessageSquare, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -36,6 +36,59 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [activeROIIndex, setActiveROIIndex] = useState<number | null>(null);
 
+  // Resizable Panel State
+  const [panelSize, setPanelSize] = useState(450); // Represents Width (desktop) or Height (mobile)
+  const isResizing = useRef(false);
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  // Check orientation/size
+  useEffect(() => {
+    const checkSize = () => {
+      setIsDesktop(window.innerWidth >= 768); // lg breakpoint lowered to md
+    };
+    checkSize();
+    window.addEventListener('resize', checkSize);
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
+
+  const startResizing = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    isResizing.current = false;
+  }, []);
+
+  const resize = useCallback((e: MouseEvent) => {
+    if (isResizing.current) {
+      if (isDesktop) {
+        // Horizontal Resize (Width from right)
+        const newWidth = window.innerWidth - e.clientX;
+        if (newWidth > 300 && newWidth < 800) {
+          setPanelSize(newWidth);
+        }
+      } else {
+        // Vertical Resize (Height from bottom)
+        // Use window.innerHeight - clientY
+        const newHeight = window.innerHeight - e.clientY;
+        if (newHeight > 200 && newHeight < window.innerHeight - 100) {
+          setPanelSize(newHeight);
+        }
+      }
+    }
+  }, [isDesktop]);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [resize, stopResizing]);
+
+
   // Initialize from report or fetch it
   useEffect(() => {
     if (report) {
@@ -44,6 +97,14 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
       fetchReport();
     }
   }, [report, caseId]);
+
+  // Auto-select first ROI when analysis is ready
+  useEffect(() => {
+    if (analysisResult?.findings && activeROIIndex === null) {
+      // Default to first patch so heatmap is available immediately
+      setActiveROIIndex(0);
+    }
+  }, [analysisResult, activeROIIndex]);
 
   const initializeFromReport = () => {
     if (!report) return;
@@ -194,10 +255,16 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
   }
 
   return (
-    <div className="h-full flex flex-col lg:flex-row animate-fade-in bg-slate-50">
+    <div
+      className="h-full w-full grid animate-fade-in bg-slate-50 overflow-hidden"
+      style={{
+        gridTemplateColumns: isDesktop ? `320px 1fr 4px ${panelSize}px` : '1fr',
+        gridTemplateRows: isDesktop ? '1fr' : `1fr 4px ${panelSize}px`,
+      }}
+    >
 
       {/* LEFT PANEL: Findings Navigation */}
-      <div className="w-full lg:w-[320px] bg-white border-r flex flex-col shrink-0 h-[400px] lg:h-auto">
+      <div className="bg-white border-r flex flex-col overflow-hidden">
         <div className="h-14 border-b px-4 flex items-center justify-between shrink-0 bg-slate-50">
           <span className="font-semibold text-sm text-slate-700">Detailed Findings</span>
           {report && <Badge variant="secondary" className="text-xs">{((report.confidence_score || 0) * 100).toFixed(0)}% Conf.</Badge>}
@@ -233,7 +300,7 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
       </div>
 
       {/* CENTER PANEL: Interactive Evidence Viewer */}
-      <div className="flex-1 flex flex-col bg-slate-100 p-4 border-r overflow-hidden">
+      <div className="flex flex-col bg-slate-100 p-4 border-r overflow-hidden">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="bg-teal-600 text-white p-1 rounded">
@@ -253,7 +320,7 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
 
         {/* Diagnostic Reasoning (Contextual below viewer) */}
         {analysisResult?.differential_diagnosis && (
-          <div className="mt-4 h-48 overflow-y-auto bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+          <div className="mt-4 h-48 overflow-y-auto bg-white rounded-lg border border-slate-200 p-4 shadow-sm shrink-0">
             <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Diagnostic Reasoning Engine</h3>
             <div className="space-y-3">
               {analysisResult.differential_diagnosis.map((dd, idx) => (
@@ -273,9 +340,23 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
         )}
       </div>
 
-      {/* RIGHT PANEL: Final Narrative & Copilot */}
-      <div className="w-full lg:w-[450px] flex flex-col bg-white h-[400px] lg:h-auto border-l shadow-xl z-10">
-        <Tabs defaultValue="copilot" className="flex flex-col h-full">
+      {/* RESIZE HANDLE */}
+      <div
+        className={cn(
+          "bg-slate-200 hover:bg-teal-500 flex items-center justify-center transition-colors group z-50",
+          isDesktop ? "w-1 cursor-col-resize h-full" : "h-1 cursor-row-resize w-full"
+        )}
+        onMouseDown={startResizing}
+      >
+        <div className={cn(
+          "rounded-full bg-slate-300 group-hover:bg-teal-600 transition-colors",
+          isDesktop ? "h-8 w-1" : "w-8 h-1"
+        )} />
+      </div>
+
+      {/* RIGHT PANEL: Final Narrative & Copilot (Resizable) */}
+      <div className="flex flex-col h-full bg-white border-l shadow-xl z-20 overflow-hidden">
+        <Tabs defaultValue="copilot" className="flex flex-col h-full flex-1">
           <div className="h-14 border-b px-2 flex items-center justify-between shrink-0 bg-slate-50">
             <TabsList className="grid w-[200px] grid-cols-2">
               <TabsTrigger value="narrative" className="text-xs">
@@ -293,7 +374,7 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
             </Button>
           </div>
 
-          <TabsContent value="narrative" className="flex-1 flex flex-col p-0 m-0 data-[state=active]:flex overflow-hidden">
+          <TabsContent value="narrative" className="flex-1 flex flex-col p-0 m-0 data-[state=active]:flex overflow-hidden h-full">
             <div className="flex-1 relative">
               <Textarea
                 value={narrative}
@@ -313,9 +394,9 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="copilot" className="flex-1 flex flex-col p-0 m-0 data-[state=active]:flex overflow-hidden bg-slate-50">
+          <TabsContent value="copilot" className="flex-1 flex flex-col p-0 m-0 data-[state=active]:flex overflow-hidden bg-slate-50 h-full">
             <PathoCopilot
-              className="border-0"
+              className="border-0 h-full"
               onUpdateReport={(text) => {
                 setNarrative(prev => prev + "\n" + text);
               }}

@@ -26,14 +26,18 @@ SLIDE CONTEXT:
 - Number of regions analyzed: {num_patches}
 - Tissue characteristics: {tissue_summary}
 
+DETAILED PATCH ANALYSIS (Top Regions of Interest):
+{patch_details}
+
 CLINICAL CONTEXT (CRITICAL FOR HAI-DEF ANALYSIS):
 {clinical_context}
 
 ANALYSIS REQUEST:
-Perform a deep multimodal analysis. You must synthesize the VISUAL evidence (from the slide) with the TEXTUAL evidence (from clinical history) to provide a comprehensive diagnostic assessment.
+Perform a deep multimodal analysis. You must synthesize the VISUAL evidence (from the slide/patches) with the TEXTUAL evidence (from clinical history) to provide a comprehensive diagnostic assessment.
 
 1. **Multimodal Synthesis** (The "Reasoning" Step):
-   - Explicitly connect specific visual features (e.g., "high nuclear-to-cytoplasmic ratio") with the clinical history (e.g., "patient age", "prior biopsy").
+   - Explicitly connect specific visual features (e.g., "high nuclear-to-cytoplasmic ratio in ROI #X") with the clinical history.
+   - Refer to specific Patches (ROI ids) where relevant findings are observed.
    - Explain *why* the visual features support or refute the clinical suspicion.
 
 2. **Microscopic Description**:
@@ -82,25 +86,6 @@ Overall analysis confidence: [score 0-1]
 Limitations: [Specific limitations]"""
 
 
-
-DESCRIPTION_TEMPLATE = """Provide a brief clinical description of the following pathology observations:
-
-{observations}
-
-Focus on clinically relevant features. Use appropriate medical terminology.
-Express appropriate uncertainty. Keep response concise (2-3 paragraphs)."""
-
-# Safety check patterns (forbidden phrases)
-FORBIDDEN_PATTERNS = [
-    "diagnosed with",
-    "definitive diagnosis",
-    "confirmed diagnosis",
-    "conclusively shows",
-    "definitely is",
-    "positively identified as",
-]
-
-
 class PromptBuilder:
     """Builds prompts for MedGemma inference."""
 
@@ -133,15 +118,19 @@ class PromptBuilder:
         total_patches = len(patches)
         tissue_patches = [p for p in patches if not p.is_background]
         
+        patch_details = "   No specific patch details available."
+        
         if not tissue_patches:
             tissue_summary = "No tissue regions detected"
         else:
             avg_tissue_ratio = sum(p.tissue_ratio for p in tissue_patches) / len(tissue_patches)
-            avg_variance = sum(p.variance_score for p in tissue_patches) / len(tissue_patches)
             max_variance = max(p.variance_score for p in tissue_patches)
             min_variance = min(p.variance_score for p in tissue_patches)
             
             # Categorize patches by variance (proxy for tissue complexity)
+            # Sort by variance descending to get most interesting first
+            sorted_patches = sorted(tissue_patches, key=lambda p: p.variance_score, reverse=True)
+            
             high_variance_patches = [p for p in tissue_patches if p.variance_score > 0.7]
             medium_variance_patches = [p for p in tissue_patches if 0.3 <= p.variance_score <= 0.7]
             low_variance_patches = [p for p in tissue_patches if p.variance_score < 0.3]
@@ -156,9 +145,19 @@ class PromptBuilder:
                 f"   - Tissue heterogeneity: {heterogeneity_desc} (variance range {min_variance:.2f}-{max_variance:.2f})\n"
                 f"   - High-interest regions: {len(high_variance_patches)} (areas with significant cellular variation)\n"
                 f"   - Medium-interest regions: {len(medium_variance_patches)} (areas with moderate features)\n"
-                f"   - Background/low-interest: {len(low_variance_patches)} regions\n"
-                f"   - Slide appears to contain tissue microarray (TMA) cores with multiple tissue specimens"
+                f"   - Background/low-interest: {len(low_variance_patches)} regions"
             )
+            
+            # Build detailed patch list (Top 8 most interesting)
+            details_list = []
+            for i, p in enumerate(sorted_patches[:8]):
+                idx = i + 1
+                details_list.append(
+                    f"   ROI #{idx} (Location x={p.coordinates.get('x')}, y={p.coordinates.get('y')}): "
+                    f"Tissue Context={p.tissue_ratio:.0%}, Complexity Score={p.variance_score:.2f}. "
+                    f"Visual Feature: Possible cellular atypia or mitoses based on variance."
+                )
+            patch_details = "\n".join(details_list)
 
         # Format clinical context
         clinical_section = ""
@@ -168,24 +167,22 @@ class PromptBuilder:
             clinical_section = "No specific clinical history provided. Analyze based on morphology only."
 
         # Determine template to use
-        # If template_content is provided, use it. Otherwise fallback to default.
         template_to_use = template_content if template_content else PATHOLOGY_ANALYSIS_TEMPLATE
 
         # Build prompt
-        # We use .format() but handle potential KeyErrors if custom templates don't have all keys
-        # We try to fill standard keys
         try:
             prompt = template_to_use.format(
                 num_patches=total_patches,
                 tissue_summary=tissue_summary,
+                patch_details=patch_details,
                 clinical_context=clinical_section,
             )
-        except KeyError as e:
-            # Fallback: if template is missing keys or has extra keys, just append context
-            # This is a safety mechanism for user templates
+        except KeyError:
+            # Fallback if template is missing keys
             prompt = (
                 f"{template_to_use}\n\n"
-                f"CONTEXT:\nRegions: {total_patches}\nSummary: {tissue_summary}\n{clinical_section}"
+                f"CONTEXT:\nRegions: {total_patches}\nSummary: {tissue_summary}\n"
+                f"ROI Details:\n{patch_details}\n{clinical_section}"
             )
 
         return prompt

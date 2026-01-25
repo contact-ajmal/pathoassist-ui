@@ -40,7 +40,8 @@ function formatFileSize(bytes: number): string {
 export function UploadScreen({ onProceed }: UploadScreenProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  
+  const [contextFile, setContextFile] = useState<File | null>(null);
+
   // Clinical Metadata State
   const [patientAge, setPatientAge] = useState<string>('');
   const [patientGender, setPatientGender] = useState<string>('');
@@ -145,12 +146,12 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
     setError(null);
     setUploadState('uploading');
     setProgress(0);
-    setStatusMessage('Uploading file...');
+    setStatusMessage('Uploading files...');
 
     try {
-      // Upload file
+      // Upload file with context
       setProgress(10);
-      const uploadResponse = await uploadSlide(selectedFile);
+      const uploadResponse = await uploadSlide(selectedFile, contextFile || undefined);
 
       setCaseId(uploadResponse.case_id);
       setFilename(uploadResponse.filename);
@@ -328,12 +329,12 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-               {/* Body Site */}
-               <div className="space-y-2">
+              {/* Body Site */}
+              <div className="space-y-2">
                 <Label htmlFor="bodySite">Body Site</Label>
-                <Input 
-                  id="bodySite" 
-                  placeholder="e.g. Lung, Breast" 
+                <Input
+                  id="bodySite"
+                  placeholder="e.g. Lung, Breast"
                   value={bodySite}
                   onChange={(e) => setBodySite(e.target.value)}
                   disabled={uploadState === 'uploading' || uploadState === 'processing'}
@@ -341,7 +342,7 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
               </div>
 
               {/* Procedure */}
-               <div className="space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="procedure">Procedure</Label>
                 <Select value={procedure} onValueChange={setProcedure} disabled={uploadState === 'uploading' || uploadState === 'processing'}>
                   <SelectTrigger id="procedure">
@@ -359,10 +360,10 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
               {/* Age */}
               <div className="space-y-2">
                 <Label htmlFor="age">Patient Age</Label>
-                <Input 
-                  id="age" 
-                  type="number" 
-                  placeholder="Years" 
+                <Input
+                  id="age"
+                  type="number"
+                  placeholder="Years"
                   value={patientAge}
                   onChange={(e) => setPatientAge(e.target.value)}
                   disabled={uploadState === 'uploading' || uploadState === 'processing'}
@@ -372,9 +373,9 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
               {/* Gender */}
               <div className="space-y-2">
                 <Label htmlFor="gender">Gender</Label>
-                 <Select value={patientGender} onValueChange={setPatientGender} disabled={uploadState === 'uploading' || uploadState === 'processing'}>
+                <Select value={patientGender} onValueChange={setPatientGender} disabled={uploadState === 'uploading' || uploadState === 'processing'}>
                   <SelectTrigger id="gender">
-                     <SelectValue placeholder="Select gender" />
+                    <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Male">Male</SelectItem>
@@ -384,12 +385,12 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
                 </Select>
               </div>
 
-               {/* Stain Type */}
-               <div className="col-span-2 space-y-2">
+              {/* Stain Type */}
+              <div className="col-span-2 space-y-2">
                 <Label htmlFor="stain">Stain Type</Label>
-                 <Select value={stainType} onValueChange={setStainType} disabled={uploadState === 'uploading' || uploadState === 'processing'}>
+                <Select value={stainType} onValueChange={setStainType} disabled={uploadState === 'uploading' || uploadState === 'processing'}>
                   <SelectTrigger id="stain">
-                     <SelectValue placeholder="Select stain" />
+                    <SelectValue placeholder="Select stain" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="H&E">Hematoxylin & Eosin (H&E)</SelectItem>
@@ -413,6 +414,45 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
                 className="min-h-[80px] resize-none"
                 disabled={uploadState === 'uploading' || uploadState === 'processing'}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Clinical Context File Upload */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileImage className="w-4 h-4 text-primary" />
+              Additional Context File (Optional)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <Input
+                type="file"
+                accept=".json,.txt,.pdf"
+                className="hidden"
+                id="context-file"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setContextFile(e.target.files[0]);
+                  }
+                }}
+                disabled={uploadState === 'uploading' || uploadState === 'processing'}
+              />
+              <Button
+                variant="outline"
+                onClick={() => document.getElementById('context-file')?.click()}
+                disabled={uploadState === 'uploading' || uploadState === 'processing'}
+              >
+                {contextFile ? 'Change File' : 'Select File'}
+              </Button>
+              {contextFile && (
+                <span className="text-sm font-medium">{contextFile.name}</span>
+              )}
+              {!contextFile && (
+                <span className="text-sm text-muted-foreground">e.g. clinical_report.json</span>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -444,6 +484,6 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 }

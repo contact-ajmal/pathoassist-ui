@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader2, Sparkles, Image as ImageIcon, FileText } from 'lucide-react';
+import { Send, User, Bot, Loader2, Sparkles, Image as ImageIcon, FileText, Edit3, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ChatMessage, ChatResponse } from '@/types/api';
 import { sendChatMessage } from '@/lib/api';
@@ -19,10 +20,19 @@ interface MessageWithActions extends ChatMessage {
     actions?: ChatResponse['suggested_actions'];
 }
 
+interface SimilarCase {
+    case_id: string;
+    diagnosis: string;
+    similarity: number;
+    description: string;
+    thumbnail_url?: string;
+}
+
 export function PathoCopilot({ className, onUpdateReport }: PathoCopilotProps) {
     const { caseId, patientData, analysisResult, roiResult, report, chatMessages, addChatMessage } = useCase();
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [similarCases, setSimilarCases] = useState<SimilarCase[] | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     // Use context messages for persistence
@@ -44,7 +54,7 @@ export function PathoCopilot({ className, onUpdateReport }: PathoCopilotProps) {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [messages]);
+    }, [messages, similarCases]);
 
     const handleSendMessage = async () => {
         if (!inputValue.trim() || !caseId) return;
@@ -58,6 +68,7 @@ export function PathoCopilot({ className, onUpdateReport }: PathoCopilotProps) {
         addChatMessage(userMsg);
         setInputValue('');
         setIsLoading(true);
+        setSimilarCases(null); // Reset previous similar cases
 
         try {
             // Construct context packet
@@ -81,6 +92,11 @@ export function PathoCopilot({ className, onUpdateReport }: PathoCopilotProps) {
 
             addChatMessage(botMsg);
 
+            // Heuristic to show similar cases if user asked
+            if (userMsg.content.toLowerCase().includes('similar') || userMsg.content.toLowerCase().includes('compare') || userMsg.content.toLowerCase().includes('atlas')) {
+                fetchSimilarCases();
+            }
+
         } catch (error) {
             console.error("Chat error:", error);
             addChatMessage({
@@ -88,6 +104,34 @@ export function PathoCopilot({ className, onUpdateReport }: PathoCopilotProps) {
                 content: "Sorry, I encountered an error communicating with the model.",
                 timestamp: new Date().toISOString()
             });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchSimilarCases = async () => {
+        setIsLoading(true);
+        try {
+            // Call the new /atlas/similar endpoint
+            // using fetch direct since it is not in api.ts yet fully typed
+            const res = await fetch('http://127.0.0.1:8009/atlas/similar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ case_id: caseId })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setSimilarCases(data.results);
+                // Add a system message saying we found them
+                addChatMessage({
+                    role: 'assistant',
+                    content: `I found ${data.results.length} histologically similar cases in the atlas.`,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        } catch (e) {
+            console.error("Atlas search failed", e);
         } finally {
             setIsLoading(false);
         }
@@ -208,6 +252,52 @@ export function PathoCopilot({ className, onUpdateReport }: PathoCopilotProps) {
                             </div>
                         </div>
                     ))}
+
+                    {/* Similar Cases Carousel */}
+                    {similarCases && (
+                        <div className="my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="flex items-center gap-2 mb-2 px-1">
+                                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                    <History className="w-3 h-3 mr-1" />
+                                    Comparative Atlas
+                                </Badge>
+                                <span className="text-xs text-slate-500">Visual RAG Matches</span>
+                            </div>
+                            <div className="flex gap-3 overflow-x-auto pb-4 px-1 snap-x scrollbar-hide">
+                                {similarCases.map((match, idx) => (
+                                    <Card key={idx} className="flex-shrink-0 w-60 snap-center bg-white border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer">
+                                        <div className="h-28 bg-slate-100 relative overflow-hidden rounded-t-lg">
+                                            {/* Placeholder or Thumbnail */}
+                                            <div className="absolute inset-0 flex items-center justify-center text-slate-300">
+                                                <ImageIcon className="w-8 h-8" />
+                                            </div>
+                                            {/* Similarity Badge */}
+                                            <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded backdrop-blur-sm">
+                                                {(match.similarity * 100).toFixed(0)}% Match
+                                            </div>
+                                        </div>
+                                        <div className="p-3">
+                                            <h4 className="font-semibold text-xs text-slate-800 truncate" title={match.case_id}>
+                                                {match.diagnosis}
+                                            </h4>
+                                            <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">
+                                                {match.description}
+                                            </p>
+                                            <div className="mt-2 flex justify-between items-center">
+                                                <Badge variant="secondary" className="h-4 text-[9px] px-1 bg-slate-100 text-slate-600">
+                                                    Confirmed
+                                                </Badge>
+                                                <Button variant="ghost" size="sm" className="h-5 text-[10px] px-0 hover:bg-transparent text-teal-600">
+                                                    Diff &rarr;
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {isLoading && (
                         <div className="flex gap-3 mr-auto max-w-[80%] animate-pulse">
                             <Avatar className="h-8 w-8 bg-teal-600">
@@ -223,7 +313,7 @@ export function PathoCopilot({ className, onUpdateReport }: PathoCopilotProps) {
             </ScrollArea>
 
             {/* Input Area */}
-            <div className="p-4 bg-white border-t mt-auto shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <div className="p-4 bg-white border-t shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                 <div className="relative flex items-end gap-2">
                     <Input
                         value={inputValue}
@@ -243,6 +333,15 @@ export function PathoCopilot({ className, onUpdateReport }: PathoCopilotProps) {
                         disabled={!inputValue.trim() || isLoading}
                     >
                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                </div>
+                <div className="mt-2 flex gap-2 justify-center">
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] text-slate-400 hover:text-teal-600 hover:bg-transparent" onClick={() => setInputValue("Show similar cases from the atlas")}>
+                        "Show similar cases"
+                    </Button>
+                    <div className="w-px h-3 bg-slate-200 self-center" />
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] text-slate-400 hover:text-teal-600 hover:bg-transparent" onClick={() => setInputValue("What visual evidence supports this?")}>
+                        "Visual evidence?"
                     </Button>
                 </div>
                 <p className="text-[10px] text-center text-slate-400 mt-2 font-medium">

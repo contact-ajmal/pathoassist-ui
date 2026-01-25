@@ -19,7 +19,7 @@ import type {
   ChatResponse,
 } from '@/types/api';
 
-export const API_BASE_URL = 'http://127.0.0.1:8007';
+export const API_BASE_URL = 'http://127.0.0.1:8000';
 
 /**
  * Get thumbnail URL for a case (direct URL, not API call)
@@ -69,11 +69,15 @@ export async function checkHealth(): Promise<HealthResponse> {
 }
 
 /**
- * Upload a WSI file
+ * Upload a WSI file with optional context file
  */
-export async function uploadSlide(file: File): Promise<UploadResponse> {
+export async function uploadSlide(file: File, contextFile?: File): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append('file', file);
+
+  if (contextFile) {
+    formData.append('context_file', contextFile);
+  }
 
   const response = await fetch(`${API_BASE_URL}/upload`, {
     method: 'POST',
@@ -330,5 +334,7 @@ export async function sendChatMessage(
     throw err;
   }
 }
+
+
 
 export { ApiError };

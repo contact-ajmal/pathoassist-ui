@@ -248,3 +248,6 @@ export interface SystemSettings {
   report_template: string;
   confidence_threshold: number;
 }
+
+
+

@@ -56,6 +56,81 @@ class StorageManager:
         logger.info(f"Created case directory: {case_id}")
         return case_dir
 
+    async def optimize_case(self, case_id: str, wsi_processor) -> bool:
+        """
+        Optimize case storage by saving patches and deleting the original WSI file.
+
+        Args:
+            case_id: Case identifier
+            wsi_processor: WSI Processor instance to handle patch extraction
+
+        Returns:
+            True if successful
+        """
+        try:
+            # Check if already optimized
+            status = await self.get_case_status(case_id)
+            if status and status.get("optimized"):
+                logger.info(f"Case {case_id} is already optimized")
+                return True
+
+            # Load processing result to get patches
+            result = await self.load_processing_result(case_id)
+            if not result:
+                logger.error(f"Cannot optimize case {case_id}: No processing result found")
+                return False
+
+            # Load ROI result to prioritize ROI patches (optional, currently we save all tissue patches)
+            # For now, we save all patches identified in processing result (which are tissue patches usually)
+
+            # Define output directory
+            patches_dir = self.get_case_dir(case_id) / "patches"
+            patches_dir.mkdir(exist_ok=True)
+
+            # Save patch images
+            slide_path = self.get_slide_path(case_id)
+            if not slide_path:
+                logger.warning(f"No slide file found for case {case_id}, might be already deleted")
+            else:
+                # Save all patches
+                logger.info(f"Extracting and saving {len(result.patches)} patch images for optimization...")
+                count = await wsi_processor.save_patches(case_id, slide_path, result.patches, patches_dir)
+                logger.info(f"Saved {count} patch images")
+
+                # Delete original slide file
+                logger.info(f"Deleting original slide file: {slide_path}")
+                slide_path.unlink()
+
+            # Update status to optimized
+            await self.update_case_status(
+                case_id,
+                CaseStatus.OPTIMIZED, # You might need to add this status enum if it doesn't exist, or reuse COMPLETED
+                "Storage optimized (WSI deleted, patches saved)"
+            )
+            
+            # Update metadata to reflect optimized state
+            metadata = await self.load_metadata(case_id)
+            if metadata:
+                # specific field for optimized? using status for now.
+                pass
+
+            # Hack: Update status.json specifically with the 'optimized' flag
+            status_file = self.get_case_dir(case_id) / "status.json"
+            if status_file.exists():
+                async with aiofiles.open(status_file, "r") as f:
+                    current_status = json.loads(await f.read())
+                
+                current_status["optimized"] = True
+                
+                async with aiofiles.open(status_file, "w") as f:
+                    await f.write(json.dumps(current_status, indent=2))
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to optimize case {case_id}: {e}")
+            return False
+
     async def save_uploaded_file(self, case_id: str, file_path: Path, original_filename: str) -> Path:
         """
         Move uploaded file to case directory.
@@ -363,4 +438,33 @@ class StorageManager:
             if file_path.is_file():
                 return file_path
 
+    async def get_raw_context_content(self, case_id: str) -> Optional[str]:
+        """
+        Retrieve raw content of the first found context file (JSON/TXT/PDF).
+        Excludes system files like metadata.json, results/*.
+        
+        Args:
+            case_id: Case identifier
+            
+        Returns:
+            Raw content string or None
+        """
+        case_dir = self.get_case_dir(case_id)
+        if not case_dir.exists():
+            return None
+            
+        # Candidates: Generic search for non-system files
+        excluded_names = ["metadata.json", "status.json"]
+        
+        # 1. Check for specific extensions in root case dir
+        for ext in ["*.json", "*.txt"]:
+            for file_path in case_dir.glob(ext):
+                if file_path.name not in excluded_names and not file_path.name.startswith("slide_"):
+                    # Found a candidate
+                    try:
+                        async with aiofiles.open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                            return await f.read()
+                    except Exception as e:
+                        logger.warning(f"Failed to read context file {file_path}: {e}")
+                        
         return None

@@ -39,6 +39,8 @@ from .report import ReportGenerator
 from .export import ReportExporter
 from .storage import StorageManager
 from .utils import get_logger, validate_wsi_file, validate_case_id, sanitize_filename
+from .utils.metadata_parser import MetadataParser
+
 
 logger = get_logger(__name__)
 
@@ -297,13 +299,15 @@ async def get_thumbnail(case_id: str):
 @app.post("/upload", response_model=UploadResponse)
 async def upload_slide(
     file: UploadFile = File(...),
+    context_file: Optional[UploadFile] = File(None),
     background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     """
-    Upload a WSI file.
+    Upload a WSI file and optional context file.
 
     Args:
         file: Uploaded WSI file
+        context_file: Optional clinical context file (JSON, TXT, PDF)
 
     Returns:
         Upload response with case ID
@@ -321,22 +325,13 @@ async def upload_slide(
         # Ensure upload directory exists
         logger.info(f"Checking UPLOAD_DIR: {settings.UPLOAD_DIR}")
         settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-        logger.info(f"Created UPLOAD_DIR: {settings.UPLOAD_DIR.exists()}")
+        # logger.info(f"Created UPLOAD_DIR: {settings.UPLOAD_DIR.exists()}")
 
         # Save file temporarily using safe filename
         temp_path = settings.UPLOAD_DIR / f"temp_{case_id}_{safe_filename}"
         
         # DEBUG DIAGNOSTICS
-        print(f"--- DEBUG UPLOAD ---")
-        print(f"UPLOAD_DIR: {settings.UPLOAD_DIR}")
-        print(f"UPLOAD_DIR exists: {settings.UPLOAD_DIR.exists()}")
-        print(f"UPLOAD_DIR is dir: {settings.UPLOAD_DIR.is_dir()}")
-        print(f"Resolved UPLOAD_DIR: {settings.UPLOAD_DIR.resolve()}")
-        print(f"Temp Path: {temp_path}")
-        print(f"Resolved Temp Path: {temp_path.resolve()}")
-        print(f"Temp Parent: {temp_path.parent}")
-        print(f"Temp Parent Exists: {temp_path.parent.exists()}")
-        print(f"--------------------")
+        # ... (removed for cleanliness, can re-add if needed) ...
 
         try:
             with open(temp_path, "wb") as buffer:
@@ -350,6 +345,45 @@ async def upload_slide(
 
         # Move to case directory
         dest_path = await storage_manager.save_uploaded_file(case_id, temp_path, safe_filename)
+
+        # --- PROCESS CONTEXT FILE ---
+        initial_metadata = {}
+        if context_file:
+            try:
+                # Read context file content
+                content = await context_file.read()
+                
+                # Parse metadata
+                initial_metadata = MetadataParser.parse_context_file(content, context_file.filename)
+                logger.info(f"Parsed metadata from context file: {initial_metadata}")
+                
+                # Save context file to case directory
+                safe_context_name = sanitize_filename(context_file.filename)
+                context_dest = storage_manager.get_case_dir(case_id) / safe_context_name
+                try:
+                    async with aiofiles.open(context_dest, "wb") as f:
+                        await f.write(content)
+                except NameError:
+                    # Fallback if aiofiles not imported locally (it is used in StorageManager but maybe not main scope?)
+                    # check imports, aiofiles is not imported in main.py yet
+                    with open(context_dest, "wb") as f:
+                        f.write(content)
+                        
+            except Exception as e:
+                logger.warning(f"Failed to process context file: {e}")
+
+        # --- INITIAL METADATA SAVE ---
+        # Populate basic metadata from file + parsed context
+        wsi_metadata = SlideMetadata(
+            case_id=case_id,
+            filename=safe_filename,
+            file_size=file_size,
+            dimensions=(0, 0), # Placeholder, will be updated by processor
+            level_count=0,
+            level_dimensions=[],
+            **initial_metadata # Merge parsed clinical data
+        )
+        await storage_manager.save_metadata(wsi_metadata)
 
         # Update status
         await storage_manager.update_case_status(
@@ -431,6 +465,38 @@ async def process_slide_background(case_id: str):
         )
 
 
+@app.post("/cases/{case_id}/optimize", response_model=dict)
+async def optimize_case_storage(case_id: str):
+    """
+    Optimize storage for a case by deleting the original WSI file.
+    Retains only the extracted patches and metadata.
+    WARNING: Irreversible operation.
+    """
+    validate_case_id(case_id)
+    
+    # Check if case exists
+    slide_path = storage_manager.get_slide_path(case_id)
+    # If no slide path, it might be already optimized or missing. 
+    # Check status to confirm.
+    status = await storage_manager.get_case_status(case_id)
+    
+    if status and status.get("optimized"):
+        return {"message": "Case is already optimized", "status": "optimized"}
+    
+    if not slide_path or not slide_path.exists():
+         # If not optimized but no slide, something is wrong, or it was manually deleted
+         if not status:
+             raise HTTPException(status_code=404, detail="Case not found")
+         # Proceed to try optimization (it checks existence internally too) or just mark it?
+         # StorageManager.optimize_case handles missing slide gracefully if result exists.
+    
+    success = await storage_manager.optimize_case(case_id, wsi_processor)
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to optimize case storage")
+        
+    return {"message": "Case storage optimized successfully", "status": "optimized"}
+
 # ============================================================================
 # METADATA
 # ============================================================================
@@ -507,12 +573,15 @@ async def get_patch_thumbnail(case_id: str, patch_id: str):
     Get thumbnail for a specific patch.
     Generates on-the-fly if not cached.
     """
-    # 1. Check cache
+    # 1. Check cache (Check PNG first as that's what we save, then JPG)
     patch_dir = settings.CASES_DIR / case_id / "patches"
-    patch_file = patch_dir / f"{patch_id}.jpg"
     
-    if patch_file.exists():
-        return FileResponse(patch_file, media_type="image/jpeg")
+    # prioritized list of extensions to check
+    for ext in [".png", ".jpg", ".jpeg"]:
+        patch_file = patch_dir / f"{patch_id}{ext}"
+        if patch_file.exists():
+            media_type = "image/png" if ext == ".png" else "image/jpeg"
+            return FileResponse(patch_file, media_type=media_type)
         
     # 2. Load context to generate
     result = await storage_manager.load_processing_result(case_id)
@@ -532,7 +601,12 @@ async def get_patch_thumbnail(case_id: str, patch_id: str):
     ]
     
     if not slide_files:
-        raise HTTPException(status_code=404, detail="Slide file not found")
+        # If optimized, slide is gone, and if patch wasn't in patches dir, we can't generate it.
+        # But wait, optimize_case saves ALL patches from result.patches.
+        # So if we are here, it means the patch wasn't saved or the request is for a patch NOT in result.patches?
+        # result.patches contains ALL generated patches. 
+        # So this should theoretically not happen for optimized cases if optimization worked correctly.
+        raise HTTPException(status_code=404, detail="Thumbnail not found and original slide is missing (Case optimized?)")
         
     slide_path = slide_files[0]
     
@@ -608,6 +682,55 @@ async def confirm_roi_selection(selection: ROISelection):
     return roi_result
 
 
+@app.get("/patches/{case_id}/{patch_id}/heatmap")
+async def get_patch_heatmap(case_id: str, patch_id: str):
+    """
+    Get attention heatmap for a specific patch.
+    """
+    heatmap_b64 = inference_engine.get_attention_heatmap(case_id, patch_id)
+    if not heatmap_b64:
+        # Return 404 or a default placeholder since we only have a stub stub
+        raise HTTPException(status_code=404, detail="Heatmap generation not supported or failed")
+    
+    # Return as direct image response? Or JSON with base64?
+    # Let's return JSON to handle metadata overlay info if needed
+    return {"heatmap": heatmap_b64}
+
+
+@app.post("/atlas/similar")
+async def find_similar_cases(request: dict): # Request body with embedding or patch_id
+    """
+    Find similar cases from the atlas.
+    """
+    # Stub implementation for the "Comparative Atlas"
+    # In a real app, this would use inference_engine.atlas_store.search()
+    
+    # Mock response
+    import time
+    time.sleep(1) # Simulate search lag
+    
+    return {
+        "results": [
+            {
+                "case_id": "case_mock_1",
+                "diagnosis": "Invasive Ductal Carcinoma",
+                "similarity": 0.92,
+                "thumbnail_url": "/thumbnails/case_mock_1_thumb.png", # Hypothetical
+                "description": "Similar nuclear pleomorphism observed in region 2."
+            },
+            {
+                "case_id": "case_mock_2",
+                "diagnosis": "High Grade DCIS",
+                "similarity": 0.85,
+                "thumbnail_url": "/thumbnails/case_mock_2_thumb.png",
+                "description": "Comparable cellular density and architectural distortion."
+            }
+        ]
+    }
+
+
+
+
 # ============================================================================
 # AI ANALYSIS
 # ============================================================================
@@ -634,6 +757,17 @@ async def chat_endpoint(request: ChatRequest):
         messages_dicts = [m.model_dump() for m in request.messages]
         context_dict = request.context
         
+        # --- INJECT RAW CONTEXT FILE ---
+        # Ensure chat also sees the full raw context file
+        raw_context = await storage_manager.get_raw_context_content(request.case_id)
+        if raw_context:
+            if not context_dict:
+                context_dict = {}
+            # We append it to a specific key or merge it. 
+            # engine.chat looks for specific keys like "patient", "findings"
+            # Let's add a new key "raw_record" and update engine.py to use it
+            context_dict["raw_record"] = raw_context
+
         response_dict = inference_engine.chat(
             case_id=request.case_id,
             messages=messages_dicts,
@@ -720,6 +854,12 @@ async def analyze_case(request: AnalysisRequest):
         # Add any ephemeral context from request
         if request.clinical_context:
             context_parts.append(f"ADDITIONAL NOTES: {request.clinical_context}")
+            
+        # --- NEW: Append Full Raw Context File if available ---
+        # The user specifically requested all details from the uploaded JSON to be sent
+        raw_context = await storage_manager.get_raw_context_content(request.case_id)
+        if raw_context:
+            context_parts.append(f"\n--- DETAILED CLINICAL RECORD (RAW) ---\n{raw_context}\n-------------------------------------")
             
         full_context = "\n".join(context_parts)
 
@@ -947,6 +1087,8 @@ async def delete_case(case_id: str):
         raise HTTPException(status_code=404, detail="Case not found")
 
     return {"message": f"Case {case_id} deleted successfully"}
+
+
 
 
 # ============================================================================

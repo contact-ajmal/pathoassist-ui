@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCase } from '@/contexts/CaseContext';
-import { getThumbnailUrl } from '@/lib/api';
+import { getThumbnailUrl, API_BASE_URL } from '@/lib/api';
 import type { PatchInfo } from '@/types/api';
 
 interface FindingsViewerProps {
@@ -18,13 +18,16 @@ export function FindingsViewer({ activePatchIndex, className }: FindingsViewerPr
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
+    // Heatmap State
+    const [showHeatmap, setShowHeatmap] = useState(false);
+    const [heatmapUrl, setHeatmapUrl] = useState<string | null>(null);
+
     const containerRef = useRef<HTMLDivElement>(null);
     const imageRef = useRef<HTMLImageElement>(null);
 
     const thumbnailUrl = caseId ? getThumbnailUrl(caseId) : null;
     const patches = roiResult?.selected_patches || [];
 
-    // Auto-focus on active patch
     // Auto-focus on active patch
     useEffect(() => {
         if (activePatchIndex !== null && patches[activePatchIndex] && metadata?.dimensions && containerRef.current && imageRef.current) {
@@ -37,28 +40,51 @@ export function FindingsViewer({ activePatchIndex, className }: FindingsViewerPr
 
             // Dimensions of the displayed image at 1x scale (zoom=25)
             const imgRect = imageRef.current.getBoundingClientRect();
-            const containerRect = containerRef.current.getBoundingClientRect();
 
             // Set Zoom
             const targetZoom = 125; // 5x zoom
             setZoom(targetZoom);
 
             // Calculate Pan
-            // We want the target point to be at the center of the container
-            // Current position of target point relative to image center: (target - 0.5) * imgDims
-
-            // At zoom=125 (scale 5), the image is 5x larger
             const scale = targetZoom / 25;
-
-            // Offset needed to center the target point
-            // Pan = (0.5 - targetPct) * (OriginalImageSize * Scale)
             const panX = (0.5 - targetX) * (imgRect.width * scale);
             const panY = (0.5 - targetY) * (imgRect.height * scale);
 
             setPan({ x: panX, y: panY });
+
+            // Reset heatmap when patch changes
+            setHeatmapUrl(null);
         }
     }, [activePatchIndex, patches, metadata]);
 
+    // Fetch Heatmap when active
+    useEffect(() => {
+        if (showHeatmap && activePatchIndex !== null && patches[activePatchIndex]) {
+            const patchId = patches[activePatchIndex].patch_id;
+            // In a real implementation, we would fetch the heatmap here. 
+            // For now, valid endpoint is /patches/{case_id}/{patch_id}/heatmap
+            // But since our backend returns a JSON with base64, we need to fetch and set.
+            // Or we can just use the endpoint directly if it returned an image.
+            // Backend currently returns { "heatmap": "base64..." } or null.
+
+            async function fetchHeatmap() {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/patches/${caseId}/${patchId}/heatmap`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.heatmap) {
+                            setHeatmapUrl(`data:image/png;base64,${data.heatmap}`);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to load heatmap", e);
+                }
+            }
+            fetchHeatmap();
+        } else {
+            setHeatmapUrl(null);
+        }
+    }, [showHeatmap, activePatchIndex, caseId, patches]);
 
     // Reuse Pan/Zoom Logic from ViewerScreen (Simplified)
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -85,6 +111,17 @@ export function FindingsViewer({ activePatchIndex, className }: FindingsViewerPr
                     {activePatchIndex !== null ? `Focusing: ROI #${activePatchIndex + 1}` : 'Slide Overview'}
                 </span>
                 <div className="flex bg-slate-700 rounded-md">
+                    <Button
+                        variant={showHeatmap ? "default" : "ghost"}
+                        size="sm"
+                        className={cn("h-6 text-xs px-2 mr-2", showHeatmap ? "bg-amber-600 text-white" : "text-amber-500 hover:text-amber-400")}
+                        onClick={() => setShowHeatmap(!showHeatmap)}
+                        disabled={activePatchIndex === null}
+                    >
+                        <Flame className="h-3 w-3 mr-1" />
+                        {showHeatmap ? "Heatmap On" : "Show Heatmap"}
+                    </Button>
+                    <div className="w-px h-4 bg-slate-600 mx-1 self-center" />
                     <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-white" onClick={() => setZoom(z => Math.min(z + 10, 200))}>
                         <ZoomIn className="h-3 w-3" />
                     </Button>
@@ -137,7 +174,9 @@ export function FindingsViewer({ activePatchIndex, className }: FindingsViewerPr
                                         key={patch.patch_id}
                                         className={cn(
                                             "absolute border-2 transition-all duration-300",
-                                            isTarget ? "border-amber-400 border-4 shadow-[0_0_15px_rgba(251,191,36,0.5)] z-10" : "border-teal-500/30 hover:border-teal-400/80 z-0"
+                                            isTarget ? "border-amber-400 border-4 shadow-[0_0_15px_rgba(251,191,36,0.5)] z-10" : "border-teal-500/30 hover:border-teal-400/80 z-0",
+                                            // HIDE border if heatmap is ON for this patch to show it clearly
+                                            isTarget && showHeatmap && "border-amber-400/30"
                                         )}
                                         style={{
                                             top: `${top}%`,
@@ -147,9 +186,23 @@ export function FindingsViewer({ activePatchIndex, className }: FindingsViewerPr
                                         }}
                                     >
                                         {isTarget && (
-                                            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-amber-500 text-black text-[8px] font-bold px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap">
-                                                ROI #{idx + 1}
-                                            </div>
+                                            <>
+                                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-amber-500 text-black text-[8px] font-bold px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap">
+                                                    ROI #{idx + 1}
+                                                </div>
+                                                {/* Heatmap Overlay */}
+                                                {showHeatmap && heatmapUrl && (
+                                                    <div className="absolute inset-0 z-20 opacity-70 mix-blend-overlay">
+                                                        <img src={heatmapUrl} className="w-full h-full object-cover" />
+                                                    </div>
+                                                )}
+                                                {/* Loading State for Heatmap */}
+                                                {showHeatmap && !heatmapUrl && (
+                                                    <div className="absolute inset-0 z-20 bg-black/20 animate-pulse flex items-center justify-center">
+                                                        <Flame className="w-4 h-4 text-amber-500 animate-bounce" />
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 );

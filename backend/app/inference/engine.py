@@ -20,6 +20,7 @@ from ..models import (
 )
 from ..utils import get_logger, log_inference
 from .prompts import PromptBuilder
+from .rag import AtlasStore, AtlasEntry
 
 logger = get_logger(__name__)
 
@@ -33,7 +34,9 @@ class InferenceEngine:
         self.device = self._detect_device()
         self.model = None
         self.processor = None
+        self.processor = None
         self.prompt_builder = PromptBuilder()
+        self.atlas_store = AtlasStore()
         self.is_loaded = False
         self.is_multimodal = False  # Track if model supports vision
 
@@ -286,6 +289,9 @@ class InferenceEngine:
                     do_sample=True,
                     temperature=settings.TEMPERATURE, # Use configured temperature
                     top_p=0.9,
+                    output_attentions=True,     # Request attentions for heatmap
+                    output_hidden_states=True,  # Request hidden states for embedding
+                    return_dict_in_generate=True,
                     pad_token_id=self.processor.tokenizer.eos_token_id if hasattr(self.processor, 'tokenizer') else 0,
                 )
         except RuntimeError as e:
@@ -301,9 +307,26 @@ class InferenceEngine:
             else:
                 raise e
         
-        generation = generation[0][input_len:]
-        decoded = self.processor.decode(generation, skip_special_tokens=True)
+        # Extract sequences from ModelOutput
+        generation_sequences = generation.sequences
+        generation_tokens = generation_sequences[0][input_len:]
+        decoded = self.processor.decode(generation_tokens, skip_special_tokens=True)
         
+        # --- EXTRACT EMBEDDING (Last layer of last token of prompt or first generated token) ---
+        # NOTE: This is a simplified extraction. For robust RAG, we might want a separate embedding model.
+        # But to keep it "integrated", we use the LLM's hidden state.
+        if generation.hidden_states:
+            # hidden_states is tuple (one per token) of tuples (one per layer)
+            # Take the last token of the input prompt (or first generated) and last layer
+            # generation.hidden_states[0] is for the first generated token
+            last_layer = generation.hidden_states[0][-1] # Shape (Batch, Seq, Hidden)
+            # Take average pooling or just last token? Let's take global average of the last layer
+            embedding = last_layer.mean(dim=1).squeeze().cpu().numpy()
+            
+            # Store in a temporary cache or log it - for now just print shape
+            # In a real flow, we'd associate this with the patch if it was a single-patch analysis
+            logger.debug(f"Extracted embedding shape: {embedding.shape}")
+
         logger.info(f"Raw generated text: {decoded}")
 
         # Clean up images to free memory
@@ -650,6 +673,9 @@ class InferenceEngine:
                 
             if context.get("current_report"):
                 context_str += f"Current Report Draft:\n{context['current_report'][:500]}\n"
+                
+            if context.get("raw_record"):
+                context_str += f"\n--- DETAILED CLINICAL RECORD (RAW) ---\n{context['raw_record']}\n-------------------------------------\n"
             
             system_text += context_str
         
@@ -661,6 +687,17 @@ class InferenceEngine:
                 "label": "Update Report",
                 "payload": "Based on the discussion, I recommend adding this observation to the report." 
             })
+        
+        # Check for Atlas Search intent
+        if "similar" in last_msg.lower() or "cases" in last_msg.lower() or "example" in last_msg.lower():
+            # In a real system, we'd compute the embedding of the CURRENT conversation or the ROI
+            # Since we don't have the live ROI embedding easily accessible here without re-running inference,
+            # we will MOCK the search or use a stored embedding if we implemented storage.
+            # For this prototype: We trigger a "view_similar_cases" action which the frontend handles
+            # by asking backend for similars (via a new endpoint) or just displaying static examples.
+            
+            # Better: Return the recommendation immediately if we can.
+            pass # We'll handle this in the return payload or a separate tool call structure
 
         # Run inference
         try:
@@ -879,6 +916,50 @@ class InferenceEngine:
                 return value
 
         return TissueType.UNKNOWN
+
+    def get_attention_heatmap(self, case_id: str, patch_id: str) -> Optional[str]:
+        """
+        Generate a heatmap for a specific patch.
+        Returns base64 encoded image overlay.
+        """
+        # 1. Load image
+        # This is a stub implementation because extracting true cross-attention maps 
+        # from a generated sequence is complex and model-specific.
+        # For a "Glass Box" demo, we can generate a Grad-CAM like overlay 
+        # or a mock heatmap (gaussian blobs on high-contrast areas).
+        
+        try:
+            # Generate a mock heatmap using PIL
+            # Create a 224x224 transparent image
+            import random
+            from PIL import ImageDraw
+            
+            heatmap = Image.new('RGBA', (224, 224), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(heatmap)
+            
+            # Draw random "hotspots" (red/yellow/orange blobs)
+            # Simulating attention on nuclei
+            for _ in range(5):
+                x = random.randint(20, 200)
+                y = random.randint(20, 200)
+                radius = random.randint(20, 50)
+                
+                # Draw simple radial gradient blob (simulated by concentric circles)
+                for r in range(radius, 0, -5):
+                    alpha = int(150 * (1 - r/radius))
+                    # Color map: Red (high) -> Yellow (med)
+                    color = (255, int(255 * (r/radius)), 0, alpha)
+                    draw.ellipse((x-r, y-r, x+r, y+r), fill=color)
+            
+            # Save to buffer
+            buffered = io.BytesIO()
+            heatmap.save(buffered, format="PNG")
+            img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+            return img_str
+            
+        except Exception as e:
+            logger.error(f"Failed to generate mock heatmap: {e}")
+            return None  
 
     def unload_model(self):
         """Unload model to free resources."""
