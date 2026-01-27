@@ -1,7 +1,7 @@
 import { WebsiteLayout } from "@/layouts/WebsiteLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Microscope, Brain, FileText, CheckCircle2, Layers } from "lucide-react";
+import { ArrowRight, Microscope, Brain, FileText, CheckCircle2, Layers, MessageSquare, MessageCircle, Bot } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Landing() {
@@ -225,6 +225,73 @@ export default function Landing() {
                                 alt="WSI Viewer Interface"
                                 className="rounded-2xl shadow-xl border border-slate-200"
                             />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* PathoAssist AI Bot Section */}
+            <section className="py-24 bg-teal-50">
+                <div className="container mx-auto px-4">
+                    <div className="flex flex-col lg:flex-row items-center gap-16">
+                        <div className="lg:w-1/2">
+                            <div className="bg-teal-100 p-3 rounded-2xl inline-flex items-center justify-center mb-6 shadow-sm">
+                                <Bot className="h-8 w-8 text-teal-600" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-slate-900 mb-6">Meet Your Digital Fellow</h2>
+                            <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+                                The <strong>PathoAssist AI Bot</strong> lives alongside your viewer, ready to answer questions and draft reports. It's like having a second pair of expert eyes on every slide.
+                            </p>
+                            <ul className="space-y-4">
+                                {[
+                                    'Instant answers to slide-related questions',
+                                    'Draft microscopic descriptions in seconds',
+                                    'Explain diagnostic reasoning with citations'
+                                ].map((item) => (
+                                    <li key={item} className="flex items-center gap-3">
+                                        <MessageCircle className="h-5 w-5 text-teal-600" />
+                                        <span className="text-slate-700">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="lg:w-1/2">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.6 }}
+                            >
+                                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-w-md mx-auto">
+                                    <div className="bg-slate-50 border-b border-slate-200 p-4 flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center border border-teal-200">
+                                            <Bot className="h-5 w-5 text-teal-600" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-slate-900 text-sm">PathoAssist AI Bot</h3>
+                                            <p className="text-xs text-teal-600 flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                                                Online
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="p-6 space-y-4">
+                                        <div className="flex gap-3 justify-end">
+                                            <div className="bg-teal-600 text-white rounded-2xl rounded-tr-sm px-4 py-2 text-sm max-w-[85%]">
+                                                Based on the histology, what is the most likely diagnosis?
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <div className="bg-slate-100 text-slate-700 rounded-2xl rounded-tl-sm px-4 py-3 text-sm max-w-[90%]">
+                                                <p className="mb-2">The features are most consistent with <strong>Invasive Ductal Carcinoma</strong>.</p>
+                                                <div className="flex gap-2">
+                                                    <span className="text-xs bg-white text-teal-700 px-2 py-1 rounded border border-slate-200">Confidence: 92%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
                         </div>
                     </div>
                 </div>
