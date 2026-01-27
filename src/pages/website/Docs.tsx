@@ -4,8 +4,9 @@ import { Book, BookOpen, Code, Terminal, Server, Shield, Cpu, Activity, FileText
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/lib/api";
+import TechnicalDocs from "./TechnicalDocs";
 
-type DocSection = 'intro' | 'install' | 'config' | 'usage' | 'architecture';
+type DocSection = 'intro' | 'install' | 'config' | 'usage' | 'architecture' | 'technical';
 
 function DeploymentValidator() {
     const [status, setStatus] = useState<'idle' | 'checking' | 'success' | 'error'>('idle');
@@ -106,6 +107,7 @@ export default function Docs() {
         { id: 'config', label: 'Configuration', icon: Server },
         { id: 'usage', label: 'User Guide', icon: Activity },
         { id: 'architecture', label: 'Architecture', icon: Cpu },
+        { id: 'technical', label: 'Technical Review', icon: Code },
     ];
 
     const renderContent = () => {
@@ -679,6 +681,9 @@ export default function Docs() {
                         </div>
                     </div>
                 );
+
+            case 'technical':
+                return <TechnicalDocs />;
 
             default:
                 return null;
