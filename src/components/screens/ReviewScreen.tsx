@@ -358,14 +358,14 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
       <div className="flex flex-col h-full bg-white border-l shadow-xl z-20 overflow-hidden">
         <Tabs defaultValue="copilot" className="flex flex-col h-full flex-1">
           <div className="h-14 border-b px-2 flex items-center justify-between shrink-0 bg-slate-50">
-            <TabsList className="grid w-[200px] grid-cols-2">
+            <TabsList className="grid w-[260px] grid-cols-2">
               <TabsTrigger value="narrative" className="text-xs">
                 <FileText className="w-3.5 h-3.5 mr-1.5" />
                 Report
               </TabsTrigger>
               <TabsTrigger value="copilot" className="text-xs">
                 <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
-                Copilot
+                PathoAssist AI Bot
               </TabsTrigger>
             </TabsList>
             <Button size="sm" variant="ghost" className="h-8 text-xs text-slate-500">
