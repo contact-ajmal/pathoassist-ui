@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Github, Play, Linkedin } from "lucide-react";
+import { Github, Play, Linkedin, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
     return (
@@ -56,8 +57,51 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                     </div>
 
                     <div className="flex items-center gap-4">
-
-
+                        {/* Mobile Menu */}
+                        <div className="md:hidden">
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="text-slate-900">
+                                        <Menu className="h-6 w-6" />
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                                    <nav className="flex flex-col gap-4 mt-8">
+                                        <Link to="/" className="text-lg font-medium text-slate-900 hover:text-teal-600 transition-colors">
+                                            Home
+                                        </Link>
+                                        <Link to="/features" className="text-lg font-medium text-slate-900 hover:text-teal-600 transition-colors">
+                                            Features
+                                        </Link>
+                                        <Link to="/wsi-processing" className="text-lg font-medium text-slate-900 hover:text-teal-600 transition-colors">
+                                            WSI Processing
+                                        </Link>
+                                        <Link to="/tech-stack" className="text-lg font-medium text-slate-900 hover:text-teal-600 transition-colors">
+                                            Tech Stack
+                                        </Link>
+                                        <Link to="/docs" className="text-lg font-medium text-slate-900 hover:text-teal-600 transition-colors">
+                                            Documentation
+                                        </Link>
+                                        <Link to="/impact" className="text-lg font-medium text-slate-900 hover:text-teal-600 transition-colors">
+                                            Global Impact
+                                        </Link>
+                                        <Link to="/about" className="text-lg font-medium text-slate-900 hover:text-teal-600 transition-colors">
+                                            About
+                                        </Link>
+                                        <div className="pt-4 mt-4 border-t border-slate-100">
+                                            <a
+                                                href="https://github.com/contact-ajmal/pathoassist"
+                                                target="_blank"
+                                                className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
+                                            >
+                                                <Github className="h-5 w-5" />
+                                                GitHub Repo
+                                            </a>
+                                        </div>
+                                    </nav>
+                                </SheetContent>
+                            </Sheet>
+                        </div>
                     </div>
                 </div>
             </nav>
