@@ -141,6 +141,19 @@ class InferenceEngine:
             self.is_loaded = False
             return False
 
+    def _create_refusal_result(self, case_id: str, reason: str, warnings: List[str] = []) -> AnalysisResult:
+        """Create a safe refusal result when quality gates fail."""
+        return AnalysisResult(
+            case_id=case_id,
+            findings=[],
+            differential_diagnosis=[],
+            narrative_summary=f"**ANALYSIS HALTED**: {reason}\n\nTo prevent hallucinations, the AI has refused to process this image due to quality controls.",
+            tissue_type=TissueType.UNKNOWN,
+            overall_confidence=0.0,
+            warnings=warnings,
+            processing_time=0.01,
+        )
+
     def _load_patch_image(self, case_id: str, patch: PatchInfo) -> Optional[Image.Image]:
         """
         Load a patch image from the slide for the given patch info.
@@ -451,6 +464,21 @@ class InferenceEngine:
             raise RuntimeError("Model not loaded")
 
         logger.info(f"Analyzing {len(patches)} patches for case {case_id}")
+
+        # --- HALLUCINATION PREVENTION (LAYER 1: QUALITY GATE) ---
+        # Refuse analysis if insufficient tissue is present to avoid fabricating findings.
+        tissue_patches = [p for p in patches if not p.is_background]
+        # Check 1: Tissue Sufficiency (Need at least some tissue to analyze)
+        if not tissue_patches or (len(tissue_patches) / max(len(patches), 1) < 0.1):
+             logger.warning(f"Analysis REFUSED for case {case_id}: Insufficient tissue density.")
+             return self._create_refusal_result(case_id, "Analysis Refused: Insufficient tissue detected. The model cannot reliably analyze this slide fragment.", warnings=["[REFUSAL] Tissue density < 10%"])
+
+        # Check 2: Information Content (Variance)
+        # If all patches are "flat" (low variance), likely blur or empty glass
+        if all(p.variance_score < 0.1 for p in tissue_patches):
+             logger.warning(f"Analysis REFUSED for case {case_id}: Low variance/blur detected.")
+             return self._create_refusal_result(case_id, "Analysis Refused: Image lacks sufficient detail (possible blur or artifact).", warnings=["[REFUSAL] Low variance/Focus quality issue"])
+        # --------------------------------------------------------
 
         # Generate analysis using appropriate method
         try:

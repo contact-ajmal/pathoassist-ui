@@ -12,6 +12,7 @@ import About from "./pages/website/About";
 import Impact from "./pages/website/Impact";
 import TechStack from "./pages/website/TechStack";
 import WSIProcessing from "./pages/website/WSIProcessing";
+import SafetyCompliance from "./pages/website/SafetyCompliance";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/impact" element={<Impact />} />
             <Route path="/tech-stack" element={<TechStack />} />
             <Route path="/wsi-processing" element={<WSIProcessing />} />
+            <Route path="/safety" element={<SafetyCompliance />} />
 
             {/* Application Routes - Lazy Loaded */}
             <Route

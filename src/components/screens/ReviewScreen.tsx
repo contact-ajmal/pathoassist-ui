@@ -400,6 +400,7 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
               onUpdateReport={(text) => {
                 setNarrative(prev => prev + "\n" + text);
               }}
+              onViewRoi={(index) => setActiveROIIndex(index)}
             />
           </TabsContent>
         </Tabs>

@@ -42,6 +42,9 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                         <Link to="/wsi-processing" className="hover:text-violet-600 transition-colors">
                             WSI Processing
                         </Link>
+                        <Link to="/safety" className="hover:text-teal-600 transition-colors">
+                            Safety & Compliance
+                        </Link>
                         <Link to="/tech-stack" className="hover:text-teal-600 transition-colors">
                             Tech Stack
                         </Link>
@@ -75,6 +78,9 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                                         </Link>
                                         <Link to="/wsi-processing" className="text-lg font-medium text-slate-900 hover:text-teal-600 transition-colors">
                                             WSI Processing
+                                        </Link>
+                                        <Link to="/safety" className="text-lg font-medium text-slate-900 hover:text-teal-600 transition-colors">
+                                            Safety & Compliance
                                         </Link>
                                         <Link to="/tech-stack" className="text-lg font-medium text-slate-900 hover:text-teal-600 transition-colors">
                                             Tech Stack

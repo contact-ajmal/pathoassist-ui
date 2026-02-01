@@ -14,6 +14,7 @@ import { useCase } from '@/contexts/CaseContext';
 interface PathoCopilotProps {
     className?: string;
     onUpdateReport?: (text: string) => void;
+    onViewRoi?: (index: number) => void;
 }
 
 interface MessageWithActions extends ChatMessage {
@@ -28,7 +29,7 @@ interface SimilarCase {
     thumbnail_url?: string;
 }
 
-export function PathoCopilot({ className, onUpdateReport }: PathoCopilotProps) {
+export function PathoCopilot({ className, onUpdateReport, onViewRoi }: PathoCopilotProps) {
     const { caseId, patientData, analysisResult, roiResult, report, chatMessages, addChatMessage } = useCase();
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -144,6 +145,31 @@ export function PathoCopilot({ className, onUpdateReport }: PathoCopilotProps) {
         }
     };
 
+    // Helper to render message with clickable ROI links
+    const renderMessageContent = (content: string) => {
+        // Regex to find [ROI-X] or [Region-X]
+        const parts = content.split(/(\[(?:ROI|Region|Patch)-?\s*#?\d+\])/gi);
+
+        return parts.map((part, i) => {
+            const match = part.match(/\[(?:ROI|Region|Patch)-?\s*#?(\d+)\]/i);
+            if (match) {
+                const index = parseInt(match[1]) - 1; // 1-based to 0-based
+                return (
+                    <button
+                        key={i}
+                        onClick={() => onViewRoi?.(index)}
+                        className="inline-flex items-center gap-1 mx-1 px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 text-xs font-medium hover:bg-teal-200 transition-colors border border-teal-200 align-baseline cursor-pointer"
+                        title="Click to view visual evidence"
+                    >
+                        <ImageIcon className="w-3 h-3" />
+                        {part.replace(/[\[\]]/g, '')}
+                    </button>
+                );
+            }
+            return <span key={i}>{part}</span>;
+        });
+    };
+
     return (
         <div className={cn("flex flex-col h-full bg-slate-50 border-l border-slate-200", className)}>
             {/* Header */}
@@ -220,7 +246,7 @@ export function PathoCopilot({ className, onUpdateReport }: PathoCopilotProps) {
                                     ? "bg-slate-800 text-white rounded-tr-sm"
                                     : "bg-white text-slate-800 border border-slate-100 rounded-tl-sm"
                             )}>
-                                <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                                <p className="leading-relaxed whitespace-pre-wrap">{renderMessageContent(msg.content)}</p>
                                 <div className={cn(
                                     "text-[10px] mt-1.5 opacity-50",
                                     msg.role === 'user' ? "text-slate-300" : "text-slate-400"
