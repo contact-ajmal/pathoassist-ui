@@ -32,7 +32,7 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                         </Link>
                     </div>
 
-                    <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+                    <div className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8 text-sm font-medium text-slate-600">
                         <Link to="/" className="hover:text-teal-600 transition-colors">
                             Home
                         </Link>
