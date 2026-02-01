@@ -2,7 +2,7 @@
 import { WebsiteLayout } from "@/layouts/WebsiteLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Shield, Lock, Eye, CheckCircle, AlertTriangle, FileCode, Check, Search, Server } from "lucide-react";
+import { Shield, Lock, Eye, CheckCircle, AlertTriangle, FileCode, Check, Search, Server, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function SafetyCompliance() {
@@ -22,12 +22,11 @@ export default function SafetyCompliance() {
                                 We employ a 4-layer defense system to ensure AI reliability in clinical workflows.
                             </p>
                             <div className="mt-10 flex items-center justify-center gap-x-6">
-                                <Button className="bg-teal-600 hover:bg-teal-500 text-white" size="lg">
-                                    Read Whitepaper
-                                </Button>
-                                <Button variant="outline" className="text-white border-white/20 hover:bg-white/10" size="lg">
-                                    Contact Compliance
-                                </Button>
+                                <Link to="/whitepaper">
+                                    <Button className="bg-teal-600 hover:bg-teal-500 text-white" size="lg">
+                                        Read Whitepaper
+                                    </Button>
+                                </Link>
                             </div>
                         </div>
                     </div>
@@ -181,6 +180,50 @@ const renderMessageContent = (content: string) => {
                         </div>
                     </div>
                 </section>
+
+                {/* Sample Use Case */}
+                <section className="py-24 bg-white border-t border-slate-200">
+                    <div className="container mx-auto px-4">
+                        <div className="mx-auto max-w-4xl">
+                            <h2 className="text-3xl font-bold tracking-tight text-slate-900 mb-8 text-center">Safety Protocol in Action: A Case Study</h2>
+                            <p className="text-center text-slate-600 mb-12 max-w-2xl mx-auto">
+                                How the Zero Hallucination Protocol handles a challenging real-world video scenario.
+                            </p>
+
+                            <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-slate-200 before:z-0">
+                                {/* Step 1 */}
+                                <TimelineItem
+                                    step="1"
+                                    title="Input Validation (The Refusal)"
+                                    status="Refusal Triggered"
+                                    statusColor="text-red-600 bg-red-50 border-red-200"
+                                    description="A pathologist uploads a slide fragment (Case ID: PATH-X99) that is 80% background glass with severe motion blur."
+                                    outcome="System detects Variance Score of 45 (Threshold is 100). Analysis is strictly refused. Zero hallucinations generated."
+                                />
+
+                                {/* Step 2 */}
+                                <TimelineItem
+                                    step="2"
+                                    title="Re-Upload & Analysis"
+                                    status="Processing"
+                                    statusColor="text-blue-600 bg-blue-50 border-blue-200"
+                                    description="Pathologist re-uploads a focused ROI. The Quality Gate passes (Variance Score: 250). The image is sent to MedGemma-2b."
+                                    outcome="The model identifies 'cribriform architecture'. The System Prompt forces it to find the exact ROI."
+                                />
+
+                                {/* Step 3 */}
+                                <TimelineItem
+                                    step="3"
+                                    title="Citation Verification"
+                                    status="Success"
+                                    statusColor="text-teal-600 bg-teal-50 border-teal-200"
+                                    description="The AI outputs: 'Suspicion of malignancy based on architectural fusion [ROI-4]'. It links ROI-4 specifically."
+                                    outcome="The user verifies by clicking [ROI-4]. The viewer jumps to the exact cells. The claim is validated by human eyes."
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </WebsiteLayout>
     );
@@ -226,5 +269,32 @@ function CheckItem({ text }: { text: string }) {
             </div>
             <span className="text-sm text-slate-700">{text}</span>
         </li>
+    );
+}
+
+function TimelineItem({ step, title, status, statusColor, description, outcome }: any) {
+    return (
+        <div className="relative z-10">
+            <div className="md:flex items-center md:space-x-6">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold relative z-10 mx-auto md:mx-0 mb-4 md:mb-0 border-4 border-slate-50">
+                    {step}
+                </div>
+                <div className="flex-grow bg-white p-6 rounded-xl border border-slate-200 shadow-sm md:flex items-start gap-6">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider border ${statusColor}`}>
+                                {status}
+                            </span>
+                        </div>
+                        <p className="text-slate-600 text-sm mb-3">{description}</p>
+                        <div className="bg-slate-50 p-3 rounded border border-slate-100 text-xs font-medium text-slate-700 flex gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
+                            {outcome}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
