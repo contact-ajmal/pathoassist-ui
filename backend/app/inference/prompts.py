@@ -10,12 +10,13 @@ SYSTEM_INSTRUCTION = """You are a medical AI assistant specialized in pathology 
 Your role is to assist pathologists by providing observations and potential findings
 from histopathology slides.
 
-CRITICAL GROUNDING PROTOCOLS (ZERO HALLUCINATION):
+CRITICAL GROUNDING PROTOCOLS (ZERO HALLUCINATION & MULTIMODAL REASONING):
 1. **Evidence-Based Only**: You must ONLY describe features explicitly visible in the provided image patches or mentioned in the patient history. Do not infer features you cannot see.
 2. **Citation Requirement**: Every major finding MUST cite the specific ROI ID that supports it (e.g., "Nuclear atypia observed in [ROI-3]").
 3. **Refusal to Guess**: If the image quality is poor or features are ambiguous, you must state "Insufficient visual evidence" instead of guessing.
 4. **Negative Constraints**: NEVER invent clinical details not provided in the history.
 5. **Uncertainty Expression**: Use calibrated probability language ("Suggests", "Consistent with") rather than definitive diagnosis ("Diagnostic of").
+6. **MANDATORY CONTEXT INTEGRATION**: You must explicitly synthesize the provided Patient Age, Gender, Body Site, Procedure, and Clinical History with your visual findings. Your differential diagnosis MUST reflect this combined multimodal context.
 
 SAFETY GUIDELINES:
 1. You provide decision support ONLY, not definitive diagnoses.
@@ -37,12 +38,12 @@ CLINICAL CONTEXT (CRITICAL FOR HAI-DEF ANALYSIS):
 {clinical_context}
 
 ANALYSIS REQUEST:
-Perform a deep multimodal analysis. You must synthesize the VISUAL evidence (from the slide/patches) with the TEXTUAL evidence (from clinical history) to provide a comprehensive diagnostic assessment.
+Perform a deep multimodal analysis. You must synthesize the VISUAL evidence (from the slide/patches) with the TEXTUAL evidence (from clinical history, patient demographics, and procedure type) to provide a comprehensive diagnostic assessment.
 
 1. **Multimodal Synthesis** (The "Reasoning" Step):
-   - Explicitly connect specific visual features (e.g., "high nuclear-to-cytoplasmic ratio in ROI #X") with the clinical history.
+   - Explicitly connect specific visual features (e.g., "high nuclear-to-cytoplasmic ratio in ROI #X") with the patient's age, gender, body site, and clinical history.
    - Refer to specific Patches (ROI ids) where relevant findings are observed.
-   - Explain *why* the visual features support or refute the clinical suspicion.
+   - Explain *why* the visual features support or refute the clinical suspicion given the patient's specific context.
 
 2. **Microscopic Description**:
    - Cellular architecture and cytology
@@ -89,6 +90,16 @@ CONFIDENCE ASSESSMENT:
 Overall analysis confidence: [score 0-1]
 Limitations: [Specific limitations]"""
 
+
+# Phrases that trigger safety flags (hallucinated certainty or diagnoses)
+FORBIDDEN_PATTERNS = [
+    "diagnostic of",
+    "definitive diagnosis",
+    "patient has",
+    "100% sure",
+    "undoubtedly",
+    "proves",
+]
 
 class PromptBuilder:
     """Builds prompts for MedGemma inference."""
@@ -166,7 +177,13 @@ class PromptBuilder:
         # Format clinical context
         clinical_section = ""
         if clinical_context:
-            clinical_section = f"Patient Data & History:\n{clinical_context}\n\n(Use this patient history to inform your differential diagnosis and risk assessment)"
+            clinical_section = f"Patient Data & History:\n{clinical_context}"
+            
+            # Add advanced context if provided (Assume it's passed via the clinical_context string or we append it here if it was passed separately)
+            # In our current implementation, these are passed as part of the slide metadata, which means we should format them from the DB document.
+            # But the prompt builder only receives the clinical_context string. We will instruct the main runner to append these.
+            
+            clinical_section += "\n\n(Use this patient history, including any provisional diagnosis and previous treatments, to inform your differential diagnosis and risk assessment)"
         else:
             clinical_section = "No specific clinical history provided. Analyze based on morphology only."
 
@@ -381,13 +398,13 @@ class PromptBuilder:
             result["tissue_type"] = "Mixed tissue specimen"
 
         # 1. Extract specific structured observations (Priority)
-        # We look for "Key: Value" patterns first
+        # We look for "Key: Value" patterns first, capturing multiline until the next list item or category
         observation_patterns = {
-            "Cellularity": r"(?:Cellularity|Cell density)[:\s]+(?:\*\*)?\s*(?:Cellularity[:\s]*)?([^\n]+)",
-            "Nuclear Features": r"(?:Nuclear Features|Nuclear Atypia)[:\s]+(?:\*\*)?\s*(?:Nuclear Features[:\s]*)?([^\n]+)",
-            "Mitosis": r"(?:Mitosis|Mitotic Activity)[:\s]+(?:\*\*)?\s*(?:Mitosis[:\s]*)?([^\n]+)",
-            "Necrosis": r"Necrosis[:\s]+(?:\*\*)?\s*(?:Necrosis[:\s]*)?([^\n]+)",
-            "Inflammation": r"Inflammation[:\s]+(?:\*\*)?\s*(?:Inflammation[:\s]*)?([^\n]+)"
+            "Cellularity": r"(?:Cellularity|Cell density)[:\s]+(?:\*\*)?\s*(?:Cellularity[:\s]*)?((?:[^\n]+(?:\n(?!\s*(?:-|[A-Z][a-z]+:)).+)*))",
+            "Nuclear Features": r"(?:Nuclear Features|Nuclear Atypia)[:\s]+(?:\*\*)?\s*(?:Nuclear Features[:\s]*)?((?:[^\n]+(?:\n(?!\s*(?:-|[A-Z][a-z]+:)).+)*))",
+            "Mitosis": r"(?:Mitosis|Mitotic Activity)[:\s]+(?:\*\*)?\s*(?:Mitosis[:\s]*)?((?:[^\n]+(?:\n(?!\s*(?:-|[A-Z][a-z]+:)).+)*))",
+            "Necrosis": r"Necrosis[:\s]+(?:\*\*)?\s*(?:Necrosis[:\s]*)?((?:[^\n]+(?:\n(?!\s*(?:-|[A-Z][a-z]+:)).+)*))",
+            "Inflammation": r"Inflammation[:\s]+(?:\*\*)?\s*(?:Inflammation[:\s]*)?((?:[^\n]+(?:\n(?!\s*(?:-|[A-Z][a-z]+:)).+)*))"
         }
         
         for category, pattern in observation_patterns.items():
@@ -396,13 +413,17 @@ class PromptBuilder:
                 obs_text = match.group(1).replace('**', '').strip()
                 # Handle leading colon/redundancy if model repeats keys
                 obs_text = re.sub(r"^(?:Cellularity|Nuclear Features|Mitosis|Necrosis|Inflammation)[:\s]*", "", obs_text, flags=re.IGNORECASE).strip()
+                # Strip markdown bullets often added by the AI
+                obs_text = re.sub(r"^[\*\-\•]\s+", "", obs_text).strip()
+                # Strip specific prefix strings often output by the model
+                obs_text = re.sub(r"^Observation:\s*", "", obs_text, flags=re.IGNORECASE).strip()
                 
                 # Filter out empty/useless responses
                 if obs_text.lower() not in ["not assessed", "unknown", "none", "", "and"] and len(obs_text) > 3:
                     # Check duplication
                     if not any(category in f.get("category", "") for f in result["findings"]):
                         result["findings"].append({
-                            "text": f"{category}: {obs_text}",
+                            "text": obs_text,
                             "category": category,
                             "confidence": "HIGH",
                             "visual_evidence": None # Global assessment

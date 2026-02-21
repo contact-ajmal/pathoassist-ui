@@ -53,9 +53,16 @@ export default function Landing() {
                                     PathoAssist combines advanced Whole Slide Imaging (WSI) with <strong>multimodal reasoning</strong> to synthesize visual evidence with patient history, offering deep, context-aware diagnostic support.
                                 </p>
                                 <div className="mt-8 flex gap-4">
-                                    <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white h-12 px-8 text-base">
-                                        <Link to="/docs">View Documentation</Link>
-                                    </Button>
+                                    <Link to="/app">
+                                        <Button size="lg" className="bg-teal-600 hover:bg-teal-700 text-white h-12 px-8 text-base">
+                                            Launch App
+                                        </Button>
+                                    </Link>
+                                    <Link to="/docs">
+                                        <Button variant="outline" size="lg" className="h-12 px-8 text-base border-slate-300 text-slate-700 hover:bg-slate-50">
+                                            View Documentation
+                                        </Button>
+                                    </Link>
                                 </div>
                             </motion.div>
                         </div>

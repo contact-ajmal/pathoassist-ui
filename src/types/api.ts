@@ -68,6 +68,8 @@ export interface SlideMetadata {
   procedure_type?: string | null;
   stain_type?: string;
   clinical_history?: string | null;
+  provisional_diagnosis?: string | null;
+  prior_treatments?: string | null;
 }
 
 export interface CaseMetadataUpdate {
@@ -77,6 +79,8 @@ export interface CaseMetadataUpdate {
   procedure_type?: string | null;
   stain_type?: string | null;
   clinical_history?: string | null;
+  provisional_diagnosis?: string | null;
+  prior_treatments?: string | null;
 }
 
 export interface PatchInfo {

@@ -72,6 +72,8 @@ class SlideMetadata(BaseModel):
     procedure_type: Optional[str] = None
     stain_type: str = "H&E"
     clinical_history: Optional[str] = None
+    provisional_diagnosis: Optional[str] = None
+    prior_treatments: Optional[str] = None
 
 
 class CaseMetadataUpdate(BaseModel):
@@ -82,6 +84,8 @@ class CaseMetadataUpdate(BaseModel):
     procedure_type: Optional[str] = None
     stain_type: Optional[str] = None
     clinical_history: Optional[str] = None
+    provisional_diagnosis: Optional[str] = None
+    prior_treatments: Optional[str] = None
 
 
 class PatchInfo(BaseModel):

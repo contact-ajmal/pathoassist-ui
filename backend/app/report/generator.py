@@ -90,101 +90,53 @@ class ReportGenerator:
 
         return report
 
-    def _extract_cellularity(self, findings: List[PathologyFinding]) -> Optional[str]:
-        """
-        Extract cellularity information from findings.
-
-        Args:
-            findings: List of findings
-
-        Returns:
-            Cellularity description or None
-        """
+    def _clean_finding(self, text: str) -> Optional[str]:
+        """Clean prefixes and noise from findings."""
         import re
-        for finding in findings:
-            text = finding.finding.lower()
-            if "cellularity" in text or "cell density" in text or "cellular" in text:
-                # Clean redundant prefixes
-                cleaned = re.sub(r'^\s*(?:cellularity|cell density)[:\s]*', '', finding.finding, flags=re.IGNORECASE).strip()
-                # Filter out noise
-                if cleaned.lower() in ["and", "the", "", "not assessed"]:
-                    continue
-                return cleaned if len(cleaned) > 5 else finding.finding
+        # Remove category prefixes if they accidentally got included
+        cleaned = re.sub(r'^\s*(?:cellularity|cell density|nuclear features|nuclear atypia|mitosis|mitotic activity|mitotic|necrosis|inflammation|inflammatory)[:\s]*', '', text, flags=re.IGNORECASE).strip()
+        # Remove floating confidence levels at the start (e.g. "high\n")
+        cleaned = re.sub(r'^(?:high|medium|low)\s*\n?', '', cleaned, flags=re.IGNORECASE).strip()
+        # Remove observation bullets (e.g. "* Observation:")
+        cleaned = re.sub(r'^[\*\-\•]\s*(?:Observation:)?\s*', '', cleaned, flags=re.IGNORECASE).strip()
+        
+        if cleaned.lower() in ["not assessed", "unknown", "none", "", "and"]:
+            return None
+        return cleaned if len(cleaned) > 5 else text
 
+    def _extract_cellularity(self, findings: List[PathologyFinding]) -> Optional[str]:
+        for finding in findings:
+            text = f"{finding.category} {finding.finding}".lower()
+            if "cellularity" in text or "cell density" in text or "cellular" in text:
+                return self._clean_finding(finding.finding)
         return None
 
     def _extract_nuclear_features(self, findings: List[PathologyFinding]) -> Optional[str]:
-        """
-        Extract nuclear atypia features.
-
-        Args:
-            findings: List of findings
-
-        Returns:
-            Nuclear features description or None
-        """
         for finding in findings:
-            text = finding.finding.lower()
+            text = f"{finding.category} {finding.finding}".lower()
             if any(term in text for term in ["nuclear", "nuclei", "atypia", "pleomorphism"]):
-                return finding.finding
-
+                return self._clean_finding(finding.finding)
         return None
 
     def _extract_mitotic_activity(self, findings: List[PathologyFinding]) -> Optional[str]:
-        """
-        Extract mitotic activity information.
-
-        Args:
-            findings: List of findings
-
-        Returns:
-            Mitotic activity description or None
-        """
-        import re
         for finding in findings:
-            text = finding.finding.lower()
+            text = f"{finding.category} {finding.finding}".lower()
             if "mitotic" in text or "mitosis" in text or "proliferation" in text:
-                # Clean redundant prefixes
-                cleaned = re.sub(r'^\s*(?:mitosis|mitotic activity|mitotic)[:\s]*', '', finding.finding, flags=re.IGNORECASE).strip()
-                return cleaned if len(cleaned) > 5 else finding.finding
-
+                return self._clean_finding(finding.finding)
         return None
 
     def _extract_necrosis(self, findings: List[PathologyFinding]) -> Optional[str]:
-        """
-        Extract necrosis information.
-
-        Args:
-            findings: List of findings
-
-        Returns:
-            Necrosis description or None
-        """
         for finding in findings:
-            text = finding.finding.lower()
+            text = f"{finding.category} {finding.finding}".lower()
             if "necrosis" in text or "necrotic" in text:
-                return finding.finding
-
+                return self._clean_finding(finding.finding)
         return None
 
     def _extract_inflammation(self, findings: List[PathologyFinding]) -> Optional[str]:
-        """
-        Extract inflammation information.
-
-        Args:
-            findings: List of findings
-
-        Returns:
-            Inflammation description or None
-        """
-        import re
         for finding in findings:
-            text = finding.finding.lower()
+            text = f"{finding.category} {finding.finding}".lower()
             if "inflammation" in text or "inflammatory" in text or "infiltrate" in text:
-                # Clean redundant prefixes
-                cleaned = re.sub(r'^\s*(?:inflammation|inflammatory)[:\s]*', '', finding.finding, flags=re.IGNORECASE).strip()
-                return cleaned if len(cleaned) > 5 else finding.finding
-
+                return self._clean_finding(finding.finding)
         return None
 
     def _suggest_follow_up_tests(

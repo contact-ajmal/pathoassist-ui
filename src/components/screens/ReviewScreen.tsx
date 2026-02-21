@@ -106,6 +106,13 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
     }
   }, [analysisResult, activeROIIndex]);
 
+  const getConfidence = (value: string): ConfidenceLevel => {
+    if (!value || value.toLowerCase() === 'not assessed' || value.toLowerCase() === 'unknown') {
+      return 'low';
+    }
+    return 'high';
+  };
+
   const initializeFromReport = () => {
     if (!report) return;
 
@@ -114,43 +121,43 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
         id: 'tissue',
         label: 'Tissue Type',
         value: report.tissue_type || 'Unknown',
-        confidence: 'high',
+        confidence: getConfidence(report.tissue_type || 'Unknown'),
       },
       {
         id: 'cellularity',
         label: 'Cellularity',
         value: report.cellularity || 'Not assessed',
-        confidence: 'high',
+        confidence: getConfidence(report.cellularity || 'Not assessed'),
       },
       {
         id: 'atypia',
         label: 'Nuclear Atypia',
         value: report.nuclear_atypia || 'Not assessed',
-        confidence: 'medium',
+        confidence: getConfidence(report.nuclear_atypia || 'Not assessed'),
       },
       {
         id: 'mitotic',
         label: 'Mitotic Activity',
         value: report.mitotic_activity || 'Not assessed',
-        confidence: 'high',
+        confidence: getConfidence(report.mitotic_activity || 'Not assessed'),
       },
       {
         id: 'necrosis',
         label: 'Necrosis',
         value: report.necrosis || 'Not assessed',
-        confidence: 'medium',
+        confidence: getConfidence(report.necrosis || 'Not assessed'),
       },
       {
         id: 'inflammation',
         label: 'Inflammation',
         value: report.inflammation || 'Not assessed',
-        confidence: 'high',
+        confidence: getConfidence(report.inflammation || 'Not assessed'),
       },
       {
         id: 'followup',
         label: 'Suggested Follow-up',
         value: report.suggested_tests?.join(', ') || 'None specified',
-        confidence: 'medium',
+        confidence: getConfidence(report.suggested_tests?.join(', ') || 'None specified'),
       },
     ];
 
@@ -166,7 +173,7 @@ export function ReviewScreen({ onProceed }: ReviewScreenProps) {
         id: 'tissue',
         label: 'Tissue Type',
         value: analysisResult.tissue_type || 'Unknown',
-        confidence: 'high',
+        confidence: getConfidence(analysisResult.tissue_type || 'Unknown'),
       },
     ];
 

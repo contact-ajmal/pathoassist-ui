@@ -49,6 +49,8 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
   const [procedure, setProcedure] = useState('');
   const [stainType, setStainType] = useState('H&E');
   const [clinicalContext, setClinicalContext] = useState('');
+  const [provisionalDiagnosis, setProvisionalDiagnosis] = useState('');
+  const [priorTreatments, setPriorTreatments] = useState('');
 
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [progress, setProgress] = useState(0);
@@ -57,6 +59,17 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { setCaseId, setFilename, setStatus, setMetadata, setProcessingResult } = useCase();
+
+  const isFormValid = () => {
+    return (
+      selectedFile !== null &&
+      patientAge.trim() !== '' &&
+      patientGender !== '' &&
+      bodySite.trim() !== '' &&
+      procedure !== '' &&
+      clinicalContext.trim() !== ''
+    );
+  };
 
   const validateFile = (file: File): boolean => {
     const ext = '.' + file.name.split('.').pop()?.toLowerCase();
@@ -141,7 +154,15 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      setError("Please select a WSI slide to upload.");
+      return;
+    }
+
+    if (!isFormValid()) {
+      setError("Please fill in all mandatory Clinical Case Information fields (marked with *) before proceeding.");
+      return;
+    }
 
     setError(null);
     setUploadState('uploading');
@@ -165,7 +186,9 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
           body_site: bodySite || null,
           procedure_type: procedure || null,
           stain_type: stainType || null,
-          clinical_history: clinicalContext || null
+          clinical_history: clinicalContext || null,
+          provisional_diagnosis: provisionalDiagnosis || null,
+          prior_treatments: priorTreatments || null
         });
       } catch (metaErr) {
         console.warn("Failed to update metadata, proceeding with basic info", metaErr);
@@ -208,7 +231,7 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
         <div>
           <h2 className="text-2xl font-semibold text-foreground">Upload Slide</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Upload a whole slide image for AI-assisted analysis
+            Upload a whole slide image and provide clinical context for AI-assisted analysis
           </p>
         </div>
 
@@ -318,34 +341,35 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
           </Card>
         )}
 
-        {/* Case Information Form (Replaces simple Clinical Context) */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Info className="w-4 h-4 text-primary" />
-              Case Information
-              <span className="text-xs font-normal text-muted-foreground">(Metadata helps improve AI accuracy)</span>
+        {/* Case Information Form */}
+        <Card className="border-teal-100">
+          <CardHeader className="pb-3 bg-teal-50/50">
+            <CardTitle className="text-base flex items-center gap-2 text-teal-900">
+              <Info className="w-4 h-4" />
+              Required Clinical Context
+              <span className="text-xs font-normal text-teal-600">(Mandatory for AI accuracy)</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-4">
             <div className="grid grid-cols-2 gap-4">
               {/* Body Site */}
               <div className="space-y-2">
-                <Label htmlFor="bodySite">Body Site</Label>
+                <Label htmlFor="bodySite">Body Site <span className="text-red-500">*</span></Label>
                 <Input
                   id="bodySite"
                   placeholder="e.g. Lung, Breast"
                   value={bodySite}
                   onChange={(e) => setBodySite(e.target.value)}
                   disabled={uploadState === 'uploading' || uploadState === 'processing'}
+                  className={!bodySite && uploadState === 'error' ? 'border-red-500' : ''}
                 />
               </div>
 
               {/* Procedure */}
               <div className="space-y-2">
-                <Label htmlFor="procedure">Procedure</Label>
+                <Label htmlFor="procedure">Procedure <span className="text-red-500">*</span></Label>
                 <Select value={procedure} onValueChange={setProcedure} disabled={uploadState === 'uploading' || uploadState === 'processing'}>
-                  <SelectTrigger id="procedure">
+                  <SelectTrigger id="procedure" className={!procedure && uploadState === 'error' ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -359,7 +383,7 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
 
               {/* Age */}
               <div className="space-y-2">
-                <Label htmlFor="age">Patient Age</Label>
+                <Label htmlFor="age">Patient Age <span className="text-red-500">*</span></Label>
                 <Input
                   id="age"
                   type="number"
@@ -367,14 +391,15 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
                   value={patientAge}
                   onChange={(e) => setPatientAge(e.target.value)}
                   disabled={uploadState === 'uploading' || uploadState === 'processing'}
+                  className={!patientAge && uploadState === 'error' ? 'border-red-500' : ''}
                 />
               </div>
 
               {/* Gender */}
               <div className="space-y-2">
-                <Label htmlFor="gender">Gender</Label>
+                <Label htmlFor="gender">Gender <span className="text-red-500">*</span></Label>
                 <Select value={patientGender} onValueChange={setPatientGender} disabled={uploadState === 'uploading' || uploadState === 'processing'}>
-                  <SelectTrigger id="gender">
+                  <SelectTrigger id="gender" className={!patientGender && uploadState === 'error' ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
@@ -403,15 +428,39 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
               </div>
             </div>
 
+            {/* Advanced Context: Provisional Diagnosis & Treatments */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="provisionalDiagnosis">Provisional / Suspected Diagnosis</Label>
+                <Input
+                  id="provisionalDiagnosis"
+                  placeholder="e.g. Suspected Adenocarcinoma"
+                  value={provisionalDiagnosis}
+                  onChange={(e) => setProvisionalDiagnosis(e.target.value)}
+                  disabled={uploadState === 'uploading' || uploadState === 'processing'}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="priorTreatments">Prior / Neoadjuvant Treatments</Label>
+                <Input
+                  id="priorTreatments"
+                  placeholder="e.g. Chemotherapy, Radiation"
+                  value={priorTreatments}
+                  onChange={(e) => setPriorTreatments(e.target.value)}
+                  disabled={uploadState === 'uploading' || uploadState === 'processing'}
+                />
+              </div>
+            </div>
+
             {/* Clinical History */}
             <div className="space-y-2">
-              <Label htmlFor="history">Clinical History / Notes</Label>
+              <Label htmlFor="history">Clinical History / Notes <span className="text-red-500">*</span></Label>
               <Textarea
                 id="history"
                 value={clinicalContext}
                 onChange={(e) => setClinicalContext(e.target.value)}
-                placeholder="e.g., 55-year-old male, chronic cough, 30 pack-year smoking history"
-                className="min-h-[80px] resize-none"
+                placeholder="Required: Provide symptoms, relevant history, leading diagnosis..."
+                className={cn('min-h-[80px] resize-none', !clinicalContext && uploadState === 'error' && 'border-red-500')}
                 disabled={uploadState === 'uploading' || uploadState === 'processing'}
               />
             </div>
@@ -463,8 +512,9 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
             <Button
               size="lg"
               onClick={handleUpload}
-              disabled={!selectedFile}
+              disabled={!selectedFile || !isFormValid()}
               className="px-8"
+              title={!isFormValid() ? "Please fill in all mandatory clinical context fields" : ""}
             >
               {uploadState === 'error' ? 'Retry Upload' : 'Upload Slide & Start'}
             </Button>
@@ -487,3 +537,4 @@ export function UploadScreen({ onProceed }: UploadScreenProps) {
     </div >
   );
 }
+

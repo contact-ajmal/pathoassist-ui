@@ -557,7 +557,7 @@ class InferenceEngine:
                     confidence_score = 0.65
 
                 finding = PathologyFinding(
-                    category=f"Finding {idx + 1}",
+                    category=finding_data.get("category", f"Finding {idx + 1}"),
                     finding=finding_text,
                     confidence=confidence_level,
                     confidence_score=confidence_score,

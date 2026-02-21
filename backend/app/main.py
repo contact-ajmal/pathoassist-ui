@@ -97,7 +97,7 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["http://localhost:3005", "http://127.0.0.1:3005"] + settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -443,9 +443,31 @@ async def process_slide_background(case_id: str):
         # Save processing result
         await storage_manager.save_processing_result(result)
 
-        # Extract and save metadata
-        metadata = wsi_processor.extract_metadata(case_id, slide_path)
-        await storage_manager.save_metadata(metadata)
+        # Extract technical metadata
+        extracted_metadata = wsi_processor.extract_metadata(case_id, slide_path)
+        
+        # Load existing clinical metadata (saved during upload)
+        existing_metadata = await storage_manager.load_metadata(case_id)
+        
+        if existing_metadata:
+            # Merge technical data into existing record
+            # We want to preserve patient demographics but update physical slide properties
+            update_data = extracted_metadata.model_dump(include={
+                "dimensions", 
+                "magnification", 
+                "resolution", 
+                "vendor", 
+                "objective_power", 
+                "level_count", 
+                "level_dimensions"
+            }, exclude_unset=True)
+            
+            merged_metadata = existing_metadata.model_copy(update=update_data)
+            await storage_manager.save_metadata(merged_metadata)
+            logger.info(f"Merged technical metadata with existing clinical context for case {case_id}")
+        else:
+            # Fallback if no initial metadata was somehow saved
+            await storage_manager.save_metadata(extracted_metadata)
 
         # Update status
         await storage_manager.update_case_status(
