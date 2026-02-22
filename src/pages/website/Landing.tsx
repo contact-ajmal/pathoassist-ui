@@ -208,17 +208,20 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* Showcase Section */}
+            {/* Showcase Section 1: Slide Viewer & ROI */}
             <section className="py-24 bg-slate-50">
                 <div className="container mx-auto px-4">
                     <div className="flex flex-col lg:flex-row-reverse items-center gap-16">
                         <div className="lg:w-1/2">
-                            <h2 className="text-3xl font-bold text-slate-900 mb-6">Deep Zoom Viewer</h2>
+                            <div className="bg-teal-100 p-3 rounded-2xl inline-flex items-center justify-center mb-6 shadow-sm">
+                                <Microscope className="h-8 w-8 text-teal-600" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-slate-900 mb-6">Deep Zoom & Smart ROI</h2>
                             <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                                Our advanced viewer handles gigapixel slide images with ease. Navigate, zoom, and select regions of interest (ROI) with intuitive controls. Features automated tissue detection and manual selection modes.
+                                Navigate gigapixel slide images with intuitive, high-performance controls. Our smart tools automatically suggest Regions of Interest (ROI) based on tissue variance, helping you focus on the most diagnostically relevant areas.
                             </p>
                             <ul className="space-y-4">
-                                {['Support for .svs, .ndpi, .tiff', 'Real-time navigation', 'Automated tissue masking'].map((item) => (
+                                {['Support for .svs, .ndpi, .tiff formats', 'Seamless panning and zooming', 'Automated high-variance tissue detection'].map((item) => (
                                     <li key={item} className="flex items-center gap-3">
                                         <CheckCircle2 className="h-5 w-5 text-teal-600" />
                                         <span className="text-slate-700">{item}</span>
@@ -226,10 +229,55 @@ export default function Landing() {
                                 ))}
                             </ul>
                         </div>
+                        <div className="lg:w-1/2 relative">
+                            <img
+                                src="/img/slide_viewer.png"
+                                alt="Slide Viewer Interface"
+                                className="rounded-2xl shadow-xl border border-slate-200"
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.3 }}
+                                className="absolute -bottom-8 -right-8 w-2/3 hidden md:block"
+                            >
+                                <img
+                                    src="/img/roi_selection.png"
+                                    alt="ROI Selection Interface"
+                                    className="rounded-2xl shadow-2xl border-4 border-white"
+                                />
+                            </motion.div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Showcase Section 2: AI Analysis */}
+            <section className="py-24 bg-white">
+                <div className="container mx-auto px-4">
+                    <div className="flex flex-col lg:flex-row items-center gap-16">
+                        <div className="lg:w-1/2">
+                            <div className="bg-blue-100 p-3 rounded-2xl inline-flex items-center justify-center mb-6 shadow-sm">
+                                <Brain className="h-8 w-8 text-blue-600" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-slate-900 mb-6">Context-Aware AI Analysis</h2>
+                            <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+                                MedGemma processes the selected patches using true multimodal reasoning. It doesn't just look at cells—it synthesizes visual evidence with the patient's clinical history to provide a comprehensive, transparent analysis.
+                            </p>
+                            <ul className="space-y-4">
+                                {['Extraction of cellular and morphological features', 'Integration with patient clinical context', 'Transparent progress and confidence scoring'].map((item) => (
+                                    <li key={item} className="flex items-center gap-3">
+                                        <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                                        <span className="text-slate-700">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                         <div className="lg:w-1/2">
                             <img
-                                src="/screen_viewer.png"
-                                alt="WSI Viewer Interface"
+                                src="/img/analysis_complete.png"
+                                alt="AI Analysis Progress"
                                 className="rounded-2xl shadow-xl border border-slate-200"
                             />
                         </div>
@@ -237,26 +285,22 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* PathoAssist AI Bot Section */}
+            {/* Showcase Section 3: Report Review & Chatbot */}
             <section className="py-24 bg-teal-50">
                 <div className="container mx-auto px-4">
-                    <div className="flex flex-col lg:flex-row items-center gap-16">
-                        <div className="lg:w-1/2">
-                            <div className="bg-teal-100 p-3 rounded-2xl inline-flex items-center justify-center mb-6 shadow-sm">
-                                <Bot className="h-8 w-8 text-teal-600" />
+                    <div className="flex flex-col lg:flex-row-reverse items-center gap-16">
+                        <div className="lg:w-1/2 text-left">
+                            <div className="bg-emerald-100 p-3 rounded-2xl inline-flex items-center justify-center mb-6 shadow-sm">
+                                <FileText className="h-8 w-8 text-emerald-600" />
                             </div>
-                            <h2 className="text-3xl font-bold text-slate-900 mb-6">Meet Your Digital Fellow</h2>
+                            <h2 className="text-3xl font-bold text-slate-900 mb-6">Interactive Report Review</h2>
                             <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                                The <strong>PathoAssist AI Bot</strong> lives alongside your viewer, ready to answer questions and draft reports. It's like having a second pair of expert eyes on every slide.
+                                Review detailed AI findings grounded directly in visual evidence. Chat with the integrated <strong>PathoAssist AI Bot</strong> to query the slide, refine the diagnosis, or generate clinical summaries on the fly.
                             </p>
                             <ul className="space-y-4">
-                                {[
-                                    'Instant answers to slide-related questions',
-                                    'Draft microscopic descriptions in seconds',
-                                    'Explain diagnostic reasoning with citations'
-                                ].map((item) => (
+                                {['Visual evidence grounding with heatmaps', 'Structured findings with confidence levels', 'Interactive conversational AI assistant'].map((item) => (
                                     <li key={item} className="flex items-center gap-3">
-                                        <MessageCircle className="h-5 w-5 text-teal-600" />
+                                        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                                         <span className="text-slate-700">{item}</span>
                                     </li>
                                 ))}
@@ -264,40 +308,16 @@ export default function Landing() {
                         </div>
                         <div className="lg:w-1/2">
                             <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true }}
-                                transition={{ duration: 0.6 }}
+                                transition={{ duration: 0.5 }}
                             >
-                                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-w-md mx-auto">
-                                    <div className="bg-slate-50 border-b border-slate-200 p-4 flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center border border-teal-200">
-                                            <Bot className="h-5 w-5 text-teal-600" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-slate-900 text-sm">PathoAssist AI Bot</h3>
-                                            <p className="text-xs text-teal-600 flex items-center gap-1">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
-                                                Online
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="p-6 space-y-4">
-                                        <div className="flex gap-3 justify-end">
-                                            <div className="bg-teal-600 text-white rounded-2xl rounded-tr-sm px-4 py-2 text-sm max-w-[85%]">
-                                                Based on the histology, what is the most likely diagnosis?
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-3">
-                                            <div className="bg-slate-100 text-slate-700 rounded-2xl rounded-tl-sm px-4 py-3 text-sm max-w-[90%]">
-                                                <p className="mb-2">The features are most consistent with <strong>Invasive Ductal Carcinoma</strong>.</p>
-                                                <div className="flex gap-2">
-                                                    <span className="text-xs bg-white text-teal-700 px-2 py-1 rounded border border-slate-200">Confidence: 92%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <img
+                                    src="/img/report_review.png"
+                                    alt="Interactive Report Review with AI Chat"
+                                    className="rounded-2xl shadow-2xl border border-slate-200"
+                                />
                             </motion.div>
                         </div>
                     </div>
