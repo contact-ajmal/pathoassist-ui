@@ -1,6 +1,9 @@
-# PathoAssist
+<div align="center">
+  <img src="public/screen_home.png" alt="PathoAssist UI Demo" width="100%" style="border-radius: 12px; margin-bottom: 20px;" />
 
-**Offline WSI Pathology Report Generator**
+  # PathoAssist
+  **Offline WSI Pathology Report Generator**
+</div>
 
 PathoAssist is a medical-grade web application designed for pathology professionals to analyze whole slide images (WSI) and generate AI-assisted pathology reports offline.
 

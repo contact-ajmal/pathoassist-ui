@@ -665,6 +665,17 @@ async def get_patch_thumbnail(case_id: str, patch_id: str):
 # ROI SELECTION
 # ============================================================================
 
+@app.get("/roi/{case_id}", response_model=ROIResult)
+async def get_roi_selection(case_id: str):
+    """
+    Get previously saved ROI selection for a case.
+    """
+    validate_case_id(case_id)
+    roi_result = await storage_manager.load_roi_result(case_id)
+    if not roi_result:
+        raise HTTPException(status_code=404, detail="ROI selection not found")
+    return roi_result
+
 @app.post("/roi/confirm", response_model=ROIResult)
 async def confirm_roi_selection(selection: ROISelection):
     """
