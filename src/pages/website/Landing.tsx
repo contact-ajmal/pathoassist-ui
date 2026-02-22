@@ -2,7 +2,8 @@ import { WebsiteLayout } from "@/layouts/WebsiteLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Microscope, Brain, FileText, CheckCircle2, Layers, MessageSquare, MessageCircle, Bot } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 
 export default function Landing() {
     const features = [
@@ -28,6 +29,42 @@ export default function Landing() {
             description: "Generate detailed, clinically-styled pathology reports with confidence scores and structured findings."
         }
     ];
+
+    const heroSlides = [
+        {
+            src: "/img/slide_viewer.png",
+            alt: "Deep Zoom Viewer Interface",
+            label: "Slide Navigation",
+            time: "0.0s"
+        },
+        {
+            src: "/img/roi_selection.png",
+            alt: "Automated ROI Detection",
+            label: "ROI Selection",
+            time: "0.8s"
+        },
+        {
+            src: "/img/analysis_complete.png",
+            alt: "AI Analysis Complete",
+            label: "Analysis Complete",
+            time: "2.3s"
+        },
+        {
+            src: "/img/report_review.png",
+            alt: "Interactive Report Review",
+            label: "Report Generation",
+            time: "3.1s"
+        }
+    ];
+
+    const [currentSlide, setCurrentSlide] = useState(0);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+        }, 3000);
+        return () => clearInterval(timer);
+    }, []);
 
     return (
         <WebsiteLayout>
@@ -72,23 +109,40 @@ export default function Landing() {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.5, delay: 0.2 }}
-                                className="relative rounded-2xl shadow-2xl border border-slate-200 bg-white p-2 flex items-center justify-center max-h-[500px] overflow-hidden"
+                                className="relative rounded-2xl shadow-2xl border border-slate-200 bg-slate-900 p-2 flex items-center justify-center h-[350px] sm:h-[450px] overflow-hidden group"
                             >
-                                <img
-                                    src="/img/report_review.png"
-                                    alt="PathoAssist Interactive Report Review"
-                                    className="rounded-xl w-full h-auto object-cover object-top shadow-2xl"
-                                />
-                                <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-xl shadow-xl border border-slate-100 max-w-xs">
+                                <AnimatePresence mode="wait">
+                                    <motion.img
+                                        key={currentSlide}
+                                        src={heroSlides[currentSlide].src}
+                                        alt={heroSlides[currentSlide].alt}
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="rounded-xl w-full h-full object-cover object-top shadow-2xl"
+                                    />
+                                </AnimatePresence>
+                                <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-xl shadow-xl border border-slate-100 min-w-[200px] z-10 transition-transform group-hover:-translate-y-2">
                                     <div className="flex items-start gap-3">
-                                        <div className="bg-green-100 p-2 rounded-lg">
-                                            <CheckCircle2 className="h-6 w-6 text-green-600" />
+                                        <div className="bg-teal-100 p-2 rounded-lg">
+                                            <CheckCircle2 className="h-6 w-6 text-teal-600" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold text-slate-900">Analysis Complete</p>
-                                            <p className="text-sm text-slate-500">Processing time: 2.3s</p>
+                                            <p className="font-semibold text-slate-900">{heroSlides[currentSlide].label}</p>
+                                            <p className="text-sm text-slate-500">Processing time: {heroSlides[currentSlide].time}</p>
                                         </div>
                                     </div>
+                                </div>
+                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10 bg-black/40 px-3 py-2 rounded-full backdrop-blur-md">
+                                    {heroSlides.map((_, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setCurrentSlide(idx)}
+                                            className={`h-2 rounded-full transition-all ${idx === currentSlide ? 'bg-white w-5' : 'bg-white/50 w-2 hover:bg-white/80'}`}
+                                            aria-label={`Go to slide ${idx + 1}`}
+                                        />
+                                    ))}
                                 </div>
                             </motion.div>
                         </div>
