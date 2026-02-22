@@ -72,7 +72,7 @@ export default function TechnicalDocs() {
                 </div>
 
                 <p className="text-slate-600 leading-relaxed">
-                    PathoAssist uses <strong>MedGemma-4B</strong> (or similar vision-language models) for feature extraction.
+                    PathoAssist uses <strong>Google MedGemma-4B</strong> (or similar vision-language models) for feature extraction.
                     Unlike standard CNNs which only output class probabilities, this VLM (Vision-Language Model) architecture projects visual patches into a shared embedding space with clinical text.
                 </p>
 

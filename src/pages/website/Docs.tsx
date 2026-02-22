@@ -128,7 +128,7 @@ export default function Docs() {
                                 Privacy First Design
                             </h3>
                             <p className="text-teal-700">
-                                All patient data and slide images are processed locally by default. PathoAssist uses local AI models (MedGemma) optimized for Apple Silicon (MPS) and CUDA to ensure sensitive medical data never leaves your secure infrastructure unless explicitly configured for remote inference.
+                                All patient data and slide images are processed locally by default. PathoAssist uses local AI models (Google MedGemma) optimized for Apple Silicon (MPS) and CUDA to ensure sensitive medical data never leaves your secure infrastructure unless explicitly configured for remote inference.
                             </p>
                         </div>
 
@@ -410,7 +410,7 @@ export default function Docs() {
                                 {
                                     step: 4,
                                     title: "AI-Powered Analysis",
-                                    desc: "MedGemma analyzes selected tissue patches using true multimodal reasoning, combining visual patterns with clinical context.",
+                                    desc: "Google MedGemma analyzes selected tissue patches using true multimodal reasoning, combining visual patterns with clinical context.",
                                     details: [
                                         "Cellular morphology and architecture assessment",
                                         "Nuclear atypia and mitotic activity detection",
@@ -531,7 +531,7 @@ export default function Docs() {
                                 <div className="text-slate-500">→</div>
                                 <div className="bg-violet-500/20 border border-violet-400/50 rounded-lg p-4 w-40">
                                     <div className="text-violet-300 text-xs uppercase tracking-wider mb-1">AI Engine</div>
-                                    <div className="font-semibold">MedGemma</div>
+                                    <div className="font-semibold">Google MedGemma</div>
                                 </div>
                             </div>
                             <div className="flex justify-center mt-4">
@@ -634,7 +634,7 @@ export default function Docs() {
                                     <div className="bg-teal-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0">3</div>
                                     <div>
                                         <h4 className="font-semibold text-slate-800">AI Analysis</h4>
-                                        <p className="text-sm text-slate-600">Selected patches are processed by MedGemma with clinical context. The model generates structured findings with confidence scores.</p>
+                                        <p className="text-sm text-slate-600">Selected patches are processed by Google MedGemma with clinical context. The model generates structured findings with confidence scores.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">

@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useCase } from '@/contexts/CaseContext';
-import { analyzeCase, getReport } from '@/lib/api';
+import { analyzeCase, getReport, getDetailedHealth, getRoiResult } from '@/lib/api';
 
 interface AnalysisScreenProps {
   onProceed: () => void;
@@ -21,7 +21,7 @@ interface AnalysisStep {
 }
 
 export function AnalysisScreen({ onProceed }: AnalysisScreenProps) {
-  const { caseId, roiResult, setAnalysisResult, setReport, clinicalContext } = useCase();
+  const { caseId, roiResult, setRoiResult, setAnalysisResult, setReport, clinicalContext } = useCase();
   const [steps, setSteps] = useState<AnalysisStep[]>([
     { id: 'preprocessing', label: 'Preprocessing', status: 'pending', progress: 0, message: 'Waiting...' },
     { id: 'morphology', label: 'Tissue Morphology Analysis', status: 'pending', progress: 0, message: 'Waiting...' },
@@ -32,7 +32,29 @@ export function AnalysisScreen({ onProceed }: AnalysisScreenProps) {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [systemInfo, setSystemInfo] = useState<{ accelerator: string; modelName: string }>({
+    accelerator: 'Loading...',
+    modelName: 'Models...'
+  });
   const hasStarted = useRef(false);
+
+  // Fetch detailed health on mount
+  useEffect(() => {
+    getDetailedHealth()
+      .then(res => {
+        setSystemInfo({
+          accelerator: res.system.accelerator,
+          modelName: res.model.name || 'Google MedGemma'
+        });
+      })
+      .catch(err => {
+        console.warn('Failed to fetch detailed health', err);
+        setSystemInfo({
+          accelerator: 'Unknown',
+          modelName: 'Unknown'
+        });
+      });
+  }, []);
 
   // Timer for elapsed time
   useEffect(() => {
@@ -61,19 +83,28 @@ export function AnalysisScreen({ onProceed }: AnalysisScreenProps) {
   };
 
   const runAnalysis = async () => {
-    if (!caseId || !roiResult) {
-      setError('Missing case data. Please go back and select ROIs.');
+    if (!caseId) {
+      setError('Missing case data. Please go back to the previous steps.');
       return;
     }
 
-    const patchIds = roiResult.selected_patches.map((p) => p.patch_id);
+    let effectiveRoiResult = roiResult;
+    if (!effectiveRoiResult) {
+      updateStep('preprocessing', { status: 'active', message: 'Loading ROI selection...' });
+      try {
+        effectiveRoiResult = await getRoiResult(caseId);
+        setRoiResult(effectiveRoiResult);
+      } catch (e) {
+        setError('No ROI selection found for this case. Please go back and select ROIs.');
+        return;
+      }
+    }
+
+    const patchIds = effectiveRoiResult.selected_patches.map((p) => p.patch_id);
     if (patchIds.length === 0) {
       setError('No patches selected for analysis.');
       return;
     }
-
-    // Get clinical context from global state
-    // const clinicalContext = localStorage.getItem('clinicalContext') || undefined;
 
     try {
       // Step 1: Preprocessing
@@ -412,9 +443,14 @@ export function AnalysisScreen({ onProceed }: AnalysisScreenProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Device</span>
-                    <span className="font-mono text-xs">CPU</span>
+                  <div className="flex justify-between text-sm items-center gap-4">
+                    <span className="text-muted-foreground shrink-0">Device</span>
+                    <span
+                      className="font-mono text-xs truncate text-right cursor-help"
+                      title={systemInfo.accelerator}
+                    >
+                      {systemInfo.accelerator}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Status</span>
@@ -439,7 +475,7 @@ export function AnalysisScreen({ onProceed }: AnalysisScreenProps) {
           {/* Model Info */}
           <div className="p-4 border-t text-xs text-muted-foreground">
             <p>
-              <span className="font-medium">Model:</span> MedGemma
+              <span className="font-medium">Model:</span> <span className="font-mono">{systemInfo.modelName}</span>
             </p>
             <p className="mt-1">
               <span className="font-medium">Case:</span>{' '}

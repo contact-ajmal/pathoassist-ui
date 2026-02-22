@@ -236,6 +236,24 @@ export interface HealthResponse {
   timestamp: string;
 }
 
+export interface DetailedHealthResponse {
+  status: string;
+  system: {
+    os: string;
+    ram_total_gb: number;
+    ram_available_gb: number;
+    accelerator: string;
+    vram_gb: number;
+    quantization_support: boolean;
+  };
+  model: {
+    loaded: boolean;
+    name: string;
+    device: string;
+    quantized: boolean;
+  };
+}
+
 export interface ErrorResponse {
   error: string;
   detail: string | null;

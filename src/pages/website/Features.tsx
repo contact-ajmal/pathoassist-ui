@@ -4,7 +4,7 @@ import { Check, Shield, Zap, Server, Lock, WifiOff, MessageSquare, MessageCircle
 
 export default function Features() {
     const specs = [
-        { title: "Model Architecture", value: "MedGemma 4B" },
+        { title: "Model Architecture", value: "Google MedGemma 4B" },
         { title: "Training Data", value: "PubMed + PathVQA" },
         { title: "Context Window", value: "4096 Tokens" },
         { title: "Inference Time", value: "< 5s / slide" },
@@ -23,7 +23,7 @@ export default function Features() {
                     >
                         <h1 className="text-4xl lg:text-5xl font-bold mb-6 tracking-tight">Advanced Pathology Features</h1>
                         <p className="text-xl text-slate-300 font-light">
-                            Leveraging <strong>MedGemma</strong> and local acceleration (MPS/CUDA) to deliver hospital-grade analysis on consumer devices.
+                            Leveraging <strong>Google MedGemma</strong> and local acceleration (MPS/CUDA) to deliver hospital-grade analysis on consumer devices.
                         </p>
                     </motion.div>
                 </div>
@@ -39,7 +39,7 @@ export default function Features() {
                             </div>
                             <h2 className="text-3xl font-bold text-slate-900 mb-6">Remote Inference Engine</h2>
                             <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                                Offload heavy computation to secure remote environments. PathoAssist seamlessly connects to external GPU instances to run the 8GB+ MedGemma model, enabling powerful AI analysis even on standard laptops without compromising local performance.
+                                Offload heavy computation to secure remote environments. PathoAssist seamlessly connects to external GPU instances to run the 8GB+ Google MedGemma model, enabling powerful AI analysis even on standard laptops without compromising local performance.
                             </p>
                             <div className="grid grid-cols-2 gap-4">
                                 {specs.map((spec) => (
@@ -356,7 +356,7 @@ export default function Features() {
                                 Zero-Latency Offline Mode
                             </h3>
                             <p className="text-slate-600 leading-relaxed">
-                                Once the MedGemma model is downloaded, the entire analysis pipeline runs locally on your machine. No data is ever sent to the cloud, ensuring compliance and functionality even during internet outages.
+                                Once the Google MedGemma model is downloaded, the entire analysis pipeline runs locally on your machine. No data is ever sent to the cloud, ensuring compliance and functionality even during internet outages.
                             </p>
                         </motion.div>
                         <motion.div

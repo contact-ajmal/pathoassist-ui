@@ -280,7 +280,7 @@ export default function WSIProcessing() {
                                     </li>
                                 </ul>
                                 <p className="text-slate-600 leading-relaxed">
-                                    Only the <strong>Top-K</strong> patches (e.g., top 10-20) are sent to MedGemma for analysis,
+                                    Only the <strong>Top-K</strong> patches (e.g., top 10-20) are sent to Google MedGemma for analysis,
                                     ensuring efficiency without sacrificing diagnostic accuracy.
                                 </p>
                             </div>

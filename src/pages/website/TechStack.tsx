@@ -80,13 +80,13 @@ const techCategories = [
             {
                 name: "HuggingFace Transformers",
                 role: "Model Loading",
-                description: "Provides the AutoProcessor and model loading utilities to seamlessly work with MedGemma weights and tokenizers.",
+                description: "Provides the AutoProcessor and model loading utilities to seamlessly work with Google MedGemma weights and tokenizers.",
                 docs: "https://huggingface.co/docs/transformers/"
             },
             {
                 name: "bitsandbytes",
                 role: "Quantization",
-                description: "Enables 4-bit/8-bit model quantization for running MedGemma on consumer GPUs with limited VRAM.",
+                description: "Enables 4-bit/8-bit model quantization for running Google MedGemma on consumer GPUs with limited VRAM.",
                 docs: "https://github.com/TimDettmers/bitsandbytes"
             },
         ]
@@ -224,7 +224,7 @@ export default function TechStack() {
                                         <Brain className="w-6 h-6 text-amber-600" />
                                     </div>
                                     <h3 className="font-bold text-slate-800 mb-2">AI Engine</h3>
-                                    <p className="text-sm text-slate-600">MedGemma + PyTorch</p>
+                                    <p className="text-sm text-slate-600">Google MedGemma + PyTorch</p>
                                     <p className="text-xs text-slate-400 mt-2">Multimodal Analysis</p>
                                 </div>
                             </div>
@@ -327,7 +327,7 @@ export default function TechStack() {
                                 { step: 1, title: "Upload", desc: "WSI file received", icon: Database },
                                 { step: 2, title: "Process", desc: "OpenSlide extracts tiles", icon: Sliders },
                                 { step: 3, title: "Filter", desc: "OpenCV finds tissue", icon: Eye },
-                                { step: 4, title: "Analyze", desc: "MedGemma inference", icon: Brain },
+                                { step: 4, title: "Analyze", desc: "Google MedGemma inference", icon: Brain },
                                 { step: 5, title: "Report", desc: "PDF/JSON generation", icon: FileText },
                             ].map((item, idx, arr) => (
                                 <div key={item.step} className="flex items-center gap-2 md:flex-1">

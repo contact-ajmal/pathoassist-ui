@@ -35,7 +35,7 @@ export function ChatInterface({ className, onUpdateReport }: ChatInterfaceProps)
         if (chatMessages.length === 0) {
             addChatMessage({
                 role: 'assistant',
-                content: "Hello! I'm MedGemma, your AI pathology assistant. I've analyzed the slide and patient context. How can I help refine the diagnosis or report?",
+                content: "Hello! I'm Google MedGemma, your AI pathology assistant. I've analyzed the slide and patient context. How can I help refine the diagnosis or report?",
                 timestamp: new Date().toISOString()
             });
         }
@@ -112,7 +112,7 @@ export function ChatInterface({ className, onUpdateReport }: ChatInterfaceProps)
                         <AvatarFallback className="bg-teal-600 text-white"><Bot className="h-4 w-4" /></AvatarFallback>
                     </Avatar>
                     <div>
-                        <h3 className="font-semibold text-sm text-slate-800">MedGemma Assistant</h3>
+                        <h3 className="font-semibold text-sm text-slate-800">Google MedGemma Assistant</h3>
                         <div className="flex items-center gap-1.5">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -124,7 +124,7 @@ export function ChatInterface({ className, onUpdateReport }: ChatInterfaceProps)
                 </div>
                 <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200">
                     <Sparkles className="w-3 h-3 mr-1" />
-                    MedGemma-1.5
+                    Google MedGemma-1.5
                 </Badge>
             </div>
 
@@ -231,7 +231,7 @@ export function ChatInterface({ className, onUpdateReport }: ChatInterfaceProps)
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Ask MedGemma about findings or report..."
+                        placeholder="Ask Google MedGemma about findings or report..."
                         className="pr-10 py-6 resize-none focus-visible:ring-teal-500"
                         disabled={isLoading}
                     />
@@ -248,7 +248,7 @@ export function ChatInterface({ className, onUpdateReport }: ChatInterfaceProps)
                     </Button>
                 </div>
                 <p className="text-[10px] text-center text-slate-400 mt-2">
-                    MedGemma can make mistakes. Verify critical findings.
+                    Google MedGemma can make mistakes. Verify critical findings.
                 </p>
             </div>
         </div>

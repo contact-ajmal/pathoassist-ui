@@ -452,7 +452,7 @@ export function ExportScreen({ onSave }: ExportScreenProps) {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Model</span>
-                <span className="font-mono text-xs">MedGemma</span>
+                <span className="font-mono text-xs">Google MedGemma</span>
               </div>
             </CardContent>
           </Card>

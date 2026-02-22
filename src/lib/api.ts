@@ -69,6 +69,14 @@ export async function checkHealth(): Promise<HealthResponse> {
 }
 
 /**
+ * Detailed Health check
+ */
+export async function getDetailedHealth(): Promise<import('../types/api').DetailedHealthResponse> {
+  const response = await fetch(`${API_BASE_URL}/health/detailed`);
+  return handleResponse<import('../types/api').DetailedHealthResponse>(response);
+}
+
+/**
  * Upload a WSI file with optional context file
  */
 export async function uploadSlide(file: File, contextFile?: File): Promise<UploadResponse> {
@@ -135,6 +143,14 @@ export async function confirmROISelection(
     body: JSON.stringify(selection),
   });
 
+  return handleResponse<ROIResult>(response);
+}
+
+/**
+ * Get saved ROI selection
+ */
+export async function getRoiResult(caseId: string): Promise<ROIResult> {
+  const response = await fetch(`${API_BASE_URL}/roi/${caseId}`);
   return handleResponse<ROIResult>(response);
 }
 

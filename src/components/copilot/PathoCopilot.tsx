@@ -44,7 +44,7 @@ export function PathoCopilot({ className, onUpdateReport, onViewRoi }: PathoCopi
         if (chatMessages.length === 0) {
             addChatMessage({
                 role: 'assistant',
-                content: "Hello! I'm MedGemma, your AI pathology assistant. I've analyzed the slide and patient context. How can I help refine the diagnosis or report?",
+                content: "Hello! I'm Google MedGemma, your AI pathology assistant. I've analyzed the slide and patient context. How can I help refine the diagnosis or report?",
                 timestamp: new Date().toISOString()
             });
         }
@@ -192,7 +192,7 @@ export function PathoCopilot({ className, onUpdateReport, onViewRoi }: PathoCopi
                 </div>
                 <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 text-xs">
                     <Sparkles className="w-3 h-3 mr-1" />
-                    MedGemma-2b
+                    Google MedGemma-2b
                 </Badge>
             </div>
 
@@ -345,7 +345,7 @@ export function PathoCopilot({ className, onUpdateReport, onViewRoi }: PathoCopi
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Ask MedGemma..."
+                        placeholder="Ask Google MedGemma..."
                         className="pr-10 py-6 resize-none focus-visible:ring-teal-500 bg-slate-50 border-slate-200"
                         disabled={isLoading}
                     />

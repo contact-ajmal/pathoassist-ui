@@ -20,7 +20,7 @@ export default function Landing() {
         },
         {
             icon: <Brain className="h-6 w-6 text-teal-600" />,
-            title: "MedGemma AI",
+            title: "Google MedGemma AI",
             description: "Powered by Google's MedGemma-4B to perform true multimodal reasoning, synthesizing visual patterns with clinical patient data."
         },
         {
@@ -84,10 +84,10 @@ export default function Landing() {
                                     v1.0 Now Available with Remote Inference
                                 </div>
                                 <h1 className="mt-6 text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl">
-                                    AI-Powered Assistant for <span className="text-teal-600">Modern Pathology</span>
+                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-red-500 to-yellow-500">Google MedGemma</span> Powered Assistant for <span className="text-teal-600">Modern Pathology</span>
                                 </h1>
                                 <p className="mt-6 text-lg text-slate-600 leading-relaxed">
-                                    PathoAssist combines advanced Whole Slide Imaging (WSI) with <strong>multimodal reasoning</strong> to synthesize visual evidence with patient history, offering deep, context-aware diagnostic support.
+                                    PathoAssist combines advanced Whole Slide Imaging (WSI) with <strong>Google's MedGemma multimodal reasoning</strong> to synthesize visual evidence with patient history, offering deep, context-aware diagnostic support.
                                 </p>
                                 <div className="mt-8 flex gap-4">
                                     <Link to="/app">
@@ -218,7 +218,7 @@ export default function Landing() {
                         <h2 className="text-3xl font-bold mb-6 sm:text-4xl text-white">The HAI-DEF Advantage</h2>
                         <p className="text-lg text-teal-100 leading-relaxed">
                             Standard AI models only see pixels. <strong className="text-white">PathoAssist sees the whole patient.</strong> <br />
-                            By leveraging the <span className="text-teal-300">MedGemma-4B HAI-DEF model</span>, we move beyond simple classification to true cognitive reasoning.
+                            By leveraging the <span className="text-teal-300">Google MedGemma-4B HAI-DEF model</span>, we move beyond simple classification to true cognitive reasoning.
                         </p>
                     </div>
 
@@ -317,7 +317,7 @@ export default function Landing() {
                             </div>
                             <h2 className="text-3xl font-bold text-slate-900 mb-6">Context-Aware AI Analysis</h2>
                             <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                                MedGemma processes the selected patches using true multimodal reasoning. It doesn't just look at cells—it synthesizes visual evidence with the patient's clinical history to provide a comprehensive, transparent analysis.
+                                Google MedGemma processes the selected patches using true multimodal reasoning. It doesn't just look at cells—it synthesizes visual evidence with the patient's clinical history to provide a comprehensive, transparent analysis.
                             </p>
                             <ul className="space-y-4">
                                 {['Extraction of cellular and morphological features', 'Integration with patient clinical context', 'Transparent progress and confidence scoring'].map((item) => (

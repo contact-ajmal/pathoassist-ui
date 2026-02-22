@@ -207,7 +207,7 @@ const renderMessageContent = (content: string) => {
                                     title="Re-Upload & Analysis"
                                     status="Processing"
                                     statusColor="text-blue-600 bg-blue-50 border-blue-200"
-                                    description="Pathologist re-uploads a focused ROI. The Quality Gate passes (Variance Score: 250). The image is sent to MedGemma-2b."
+                                    description="Pathologist re-uploads a focused ROI. The Quality Gate passes (Variance Score: 250). The image is sent to Google MedGemma-2b."
                                     outcome="The model identifies 'cribriform architecture'. The System Prompt forces it to find the exact ROI."
                                 />
 

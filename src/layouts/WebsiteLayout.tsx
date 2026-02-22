@@ -168,7 +168,7 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                     <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs">
                         <p>© 2026 PathoAssist Project. All rights reserved.</p>
                         <p className="flex items-center gap-1">
-                            Built by <a href="https://www.linkedin.com/in/ajmalnazirbaba/" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors font-medium">Ajmal Baba</a> with React & MedGemma.
+                            Built by <a href="https://www.linkedin.com/in/ajmalnazirbaba/" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors font-medium">Ajmal Baba</a> with React React & MedGemma Google MedGemma.
                         </p>
                     </div>
                 </div>

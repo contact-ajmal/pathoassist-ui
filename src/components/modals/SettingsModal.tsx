@@ -191,7 +191,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
                       placeholder="https://....ngrok-free.app"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Enter the public URL of your remote MedGemma instance.
+                      Enter the public URL of your remote Google MedGemma instance.
                     </p>
                   </div>
                 )}
@@ -214,7 +214,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="google/medgemma-1.5-4b-it">MedGemma 4B (Default)</SelectItem>
+                    <SelectItem value="google/medgemma-1.5-4b-it">Google MedGemma 4B (Default)</SelectItem>
                     <SelectItem value="google/gemma-2b-it">Gemma 2B (Faster)</SelectItem>
                     <SelectItem value="google/gemma-7b-it">Gemma 7B (High VRAM)</SelectItem>
                   </SelectContent>

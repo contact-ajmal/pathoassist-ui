@@ -74,7 +74,7 @@ export default function Whitepaper() {
                                 <div>
                                     <h3 className="text-xl font-semibold text-slate-900 mb-2">Layer 2: Constrained Prompting (The Contract)</h3>
                                     <p className="text-slate-700 leading-relaxed">
-                                        We utilize MedGemma-2b with a system prompt that enforces a strict "No Citation, No Output" rule.
+                                        We utilize Google MedGemma-2b with a system prompt that enforces a strict "No Citation, No Output" rule.
                                         The model is penalized for any finding that lacks an <code>[ROI-ID]</code> tag.
                                         We explicitly map the "Unknown" token space, forcing the model to output <code>[INSUFFICIENT_EVIDENCE]</code> instead of low-probability tokens.
                                     </p>
