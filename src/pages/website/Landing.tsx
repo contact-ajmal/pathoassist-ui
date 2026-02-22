@@ -72,12 +72,12 @@ export default function Landing() {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.5, delay: 0.2 }}
-                                className="relative rounded-2xl shadow-2xl border border-slate-200 bg-white p-2"
+                                className="relative rounded-2xl shadow-2xl border border-slate-200 bg-white p-2 flex items-center justify-center max-h-[500px] overflow-hidden"
                             >
                                 <img
-                                    src="/demo_video.webp"
-                                    alt="PathoAssist Application Demo"
-                                    className="rounded-xl w-full h-auto shadow-2xl"
+                                    src="/img/report_review.png"
+                                    alt="PathoAssist Interactive Report Review"
+                                    className="rounded-xl w-full h-auto object-cover object-top shadow-2xl"
                                 />
                                 <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-xl shadow-xl border border-slate-100 max-w-xs">
                                     <div className="flex items-start gap-3">
