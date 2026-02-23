@@ -79,10 +79,7 @@ export default function Landing() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.5 }}
                             >
-                                <div className="inline-flex items-center gap-2 rounded-full bg-teal-100 px-3 py-1 text-sm font-medium text-teal-800">
-                                    <span className="flex h-2 w-2 rounded-full bg-teal-600"></span>
-                                    v1.0 Now Available with Remote Inference
-                                </div>
+
                                 <h1 className="mt-6 text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl">
                                     <span className="text-teal-600">Google MedGemma</span> Powered Assistant for <span className="text-teal-600">Modern Pathology</span>
                                 </h1>
