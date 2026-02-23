@@ -1,7 +1,7 @@
 import { WebsiteLayout } from "@/layouts/WebsiteLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Microscope, Brain, FileText, CheckCircle2, Layers, MessageSquare, MessageCircle, Bot } from "lucide-react";
+import { ArrowRight, Microscope, Brain, FileText, CheckCircle2, Layers, MessageSquare, MessageCircle, Bot, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 
@@ -83,11 +83,16 @@ export default function Landing() {
                                     <span className="flex h-2 w-2 rounded-full bg-teal-600"></span>
                                     v1.0 Now Available with Remote Inference
                                 </div>
-                                <h1 className="mt-6 text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl">
-                                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-red-500 to-yellow-500">Google MedGemma</span> Powered Assistant for <span className="text-teal-600">Modern Pathology</span>
+                                <h1 className="mt-6 text-5xl font-extrabold tracking-tight text-slate-900 sm:text-6xl flex flex-wrap gap-x-4 items-center">
+                                    <span className="inline-flex items-center gap-3">
+                                        <Sparkles className="h-12 w-12 text-blue-600 fill-blue-600" />
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500">Google Gemini</span>
+                                    </span>
+                                    <span className="text-4xl sm:text-5xl">& MedGemma</span>
+                                    <span className="block w-full mt-2">Powered Assistant for <span className="text-teal-600">Modern Pathology</span></span>
                                 </h1>
                                 <p className="mt-6 text-lg text-slate-600 leading-relaxed">
-                                    PathoAssist combines advanced Whole Slide Imaging (WSI) with <strong>Google's MedGemma multimodal reasoning</strong> to synthesize visual evidence with patient history, offering deep, context-aware diagnostic support.
+                                    PathoAssist combines advanced Whole Slide Imaging (WSI) with <strong>Google's Gemini API & MedGemma reasoning</strong> to synthesize visual evidence with patient history, offering deep, context-aware diagnostic support.
                                 </p>
                                 <div className="mt-8 flex gap-4">
                                     <Link to="/app">
