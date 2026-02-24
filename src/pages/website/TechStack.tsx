@@ -197,9 +197,18 @@ export default function TechStack() {
             {/* Architecture Overview */}
             <section className="py-16 bg-white border-b">
                 <div className="container mx-auto px-4">
-                    <div className="max-w-4xl mx-auto">
-                        <h2 className="text-2xl font-bold text-slate-900 mb-8 text-center">High-Level Architecture</h2>
-                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-8">
+                    <div className="max-w-5xl mx-auto">
+                        <h2 className="text-3xl font-bold text-slate-900 mb-8 text-center">System Architecture</h2>
+
+                        <div className="mb-12 rounded-2xl overflow-hidden shadow-2xl border border-slate-200 bg-slate-900 p-2">
+                            <img
+                                src="/architecture.png"
+                                alt="PathoAssist System Architecture Diagram"
+                                className="w-full h-auto rounded-xl border border-slate-800"
+                            />
+                        </div>
+
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-8 max-w-4xl mx-auto">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                                 <div className="p-6 bg-white rounded-xl border border-slate-100 shadow-sm">
                                     <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
