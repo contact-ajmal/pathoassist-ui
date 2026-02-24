@@ -116,9 +116,6 @@ npm run dev
 # Vite runs at http://localhost:8080
 ```
 
-### Note on Developer Documentation
-Internal AI system prompts, integration instructions, and repository structure details have been moved to the `/docs/` folder to maintain a clean root directory.
-
 ---
 
 ## ⚠️ Medical Device Notice
