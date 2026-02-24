@@ -268,19 +268,29 @@ async def delete_template(name: str):
 
 
 @app.get("/thumbnail/{case_id}")
-async def get_thumbnail(case_id: str):
+async def get_thumbnail(case_id: str, high_res: bool = False):
     """
     Get slide thumbnail for a case.
     
     Args:
         case_id: Case identifier
+        high_res: Whether to return the high resolution version (if available)
         
     Returns:
         Thumbnail image file
     """
     # Don't validate case_id existence for thumbnail as it might not have metadata yet
     case_dir = settings.CASES_DIR / case_id
+    
+    hd_thumbnail_path = case_dir / "thumbnails" / "hd_thumbnail.jpg"
     thumbnail_path = case_dir / "thumbnails" / "thumbnail.png"
+    
+    if high_res and hd_thumbnail_path.exists():
+        return FileResponse(
+            path=str(hd_thumbnail_path),
+            media_type="image/jpeg",
+            filename=f"{case_id}_hd_thumbnail.jpg"
+        )
     
     if not thumbnail_path.exists():
         raise HTTPException(status_code=404, detail="Thumbnail not found")

@@ -19,13 +19,14 @@ import type {
   ChatResponse,
 } from '@/types/api';
 
-export const API_BASE_URL = 'http://127.0.0.1:8001';
+export const API_BASE_URL = 'http://127.0.0.1:8000';
 
 /**
  * Get thumbnail URL for a case (direct URL, not API call)
  */
-export function getThumbnailUrl(caseId: string): string {
-  return `${API_BASE_URL}/thumbnail/${caseId}`;
+export function getThumbnailUrl(caseId: string, highRes: boolean = false): string {
+  const url = `${API_BASE_URL}/thumbnail/${caseId}`;
+  return highRes ? `${url}?high_res=true` : url;
 }
 
 /**

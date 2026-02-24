@@ -130,9 +130,14 @@ class WSIProcessor:
         try:
             # Get thumbnail at appropriate level
             thumbnail = slide.get_thumbnail(max_size)
-            thumbnail.save(output_path, "PNG")
+            if output_path.suffix.lower() == ".jpg" or output_path.suffix.lower() == ".jpeg":
+                if thumbnail.mode == 'RGBA':
+                    thumbnail = thumbnail.convert('RGB')
+                thumbnail.save(output_path, "JPEG", quality=90)
+            else:
+                thumbnail.save(output_path, "PNG")
 
-            logger.info(f"Generated thumbnail: {output_path}")
+            logger.info(f"Generated thumbnail: {output_path} (size: {max_size})")
             return output_path
 
         finally:
@@ -157,9 +162,13 @@ class WSIProcessor:
         # Extract metadata
         metadata = self.extract_metadata(case_id, slide_path)
 
-        # Generate thumbnail
+        # Generate standard thumbnail
         thumbnail_path = thumbnail_dir / "thumbnail.png"
-        self.generate_thumbnail(slide_path, thumbnail_path)
+        self.generate_thumbnail(slide_path, thumbnail_path, max_size=(800, 800))
+
+        # Generate HD thumbnail for deep zoom
+        hd_thumbnail_path = thumbnail_dir / "hd_thumbnail.jpg"
+        self.generate_thumbnail(slide_path, hd_thumbnail_path, max_size=(4000, 4000))
 
         # Generate tiles/patches
         slide = self.open_slide(slide_path)

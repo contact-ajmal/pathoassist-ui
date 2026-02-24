@@ -194,7 +194,7 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
   const { caseId, metadata, processingResult, filename } = useCase();
 
   // Viewer State
-  const [zoom, setZoom] = useState([25]);
+  const [zoom, setZoom] = useState([1]);
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
   // Interaction State
@@ -221,15 +221,15 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
     ? Math.round((tissuePatches / totalPatches) * 100)
     : 0;
 
-  const thumbnailUrl = caseId ? getThumbnailUrl(caseId) : null;
+  const thumbnailUrl = caseId ? getThumbnailUrl(caseId, true) : null;
 
   // --- Actions ---
 
-  const handleZoomIn = () => setZoom(prev => [Math.min(prev[0] + 10, 200)]);
-  const handleZoomOut = () => setZoom(prev => [Math.max(prev[0] - 10, 10)]);
+  const handleZoomIn = () => setZoom(prev => [Math.min(prev[0] + 1, 40)]);
+  const handleZoomOut = () => setZoom(prev => [Math.max(prev[0] - 1, 1)]);
 
   const handleReset = () => {
-    setZoom([25]);
+    setZoom([1]);
     setPan({ x: 0, y: 0 });
     setActiveTool('pan');
   };
@@ -503,16 +503,18 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
                 <Slider
                   value={zoom}
                   onValueChange={setZoom}
-                  min={10}
-                  max={200}
-                  step={5}
+                  min={1}
+                  max={40}
+                  step={1}
                 />
               </div>
-              <span className="font-mono text-xs w-12">{zoom[0]}%</span>
+              <span className="font-mono text-xs w-12">{zoom[0]}x</span>
             </div>
-            <div className="px-2 py-1 bg-muted rounded text-xs font-mono">
-              {metadata?.magnification ? `${metadata.magnification}x` : '40x'}
-            </div>
+            {metadata?.magnification && (
+              <div className="px-2 py-1 bg-muted rounded text-xs font-mono" title="Native Magnification">
+                Base: {metadata.magnification}x
+              </div>
+            )}
           </div>
         </div>
 
@@ -532,17 +534,18 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
               <div
                 className="relative transition-transform duration-100 ease-out"
                 style={{
-                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom[0] / 25})`,
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom[0]})`,
                   transformOrigin: 'center center'
                 }}
               >
                 <img
                   ref={imageRef}
                   src={thumbnailUrl}
-                  alt="Slide Thumbnail"
+                  alt="Slide HD Thumbnail"
                   className="max-w-[80%] max-h-[80vh] object-contain shadow-2xl rounded-sm"
                   draggable={false}
                   onClick={handleImageClick}
+                  style={{ imageRendering: zoom[0] >= 10 ? 'pixelated' : 'auto' }}
                 />
 
                 {/* SVG Overlay for Annotations */}
@@ -569,7 +572,7 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
                     <AnnotationRenderer
                       key={ann.id}
                       annotation={ann}
-                      zoom={zoom[0]}
+                      zoom={zoom[0] * 25}
                       resolution={metadata?.resolution}
                       imageDimensions={metadata?.dimensions}
                     />
@@ -579,7 +582,7 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
                   {currentAnnotation && currentAnnotation.points && currentAnnotation.points.length > 0 && (
                     <AnnotationRenderer
                       annotation={currentAnnotation as Annotation}
-                      zoom={zoom[0]}
+                      zoom={zoom[0] * 25}
                       isPreview
                       resolution={metadata?.resolution}
                       imageDimensions={metadata?.dimensions}
@@ -619,8 +622,8 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
                   style={{
                     left: `${50 - (pan.x / 10)}%`, // Simplified mapping logic
                     top: `${50 - (pan.y / 10)}%`,
-                    width: `${3000 / zoom[0]}%`,
-                    height: `${3000 / zoom[0]}%`,
+                    width: `${3000 / (zoom[0] * 25)}%`,
+                    height: `${3000 / (zoom[0] * 25)}%`,
                     transform: 'translate(-50%, -50%)'
                   }}
                 />
@@ -636,7 +639,7 @@ export function ViewerScreen({ onProceed }: ViewerScreenProps) {
           <div className="absolute bottom-4 left-4 px-3 py-1.5 bg-card/90 backdrop-blur rounded border text-xs font-mono select-none">
             <div className="flex items-center gap-3">
               <span>Tool: <span className="font-semibold text-primary">{activeTool.toUpperCase()}</span></span>
-              <span>Zoom: {zoom[0]}%</span>
+              <span>Zoom: {zoom[0]}x</span>
               <span>Pan: {Math.round(pan.x)},{Math.round(pan.y)}</span>
               {currentAnnotation && (
                 <span className="text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400 px-1 rounded">
