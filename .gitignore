@@ -37,3 +37,7 @@ ENV/
 backend/venv/
 backend/data/
 backend/.env
+
+# Hackathon Specific
+hackathon/
+SUBMISSION_WRITEUP.md
