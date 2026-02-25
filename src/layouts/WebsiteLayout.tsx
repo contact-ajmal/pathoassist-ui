@@ -60,13 +60,7 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="hidden md:flex items-center gap-4">
-                            <Link to="/app">
-                                <Button className="bg-slate-900 text-white hover:bg-slate-800">
-                                    Launch App
-                                </Button>
-                            </Link>
-                        </div>
+
                         {/* Mobile Menu */}
                         <div className="md:hidden">
                             <Sheet>
@@ -111,13 +105,7 @@ export const WebsiteLayout = ({ children }: { children: React.ReactNode }) => {
                                                 GitHub Repo
                                             </a>
                                         </div>
-                                        <div className="pt-4 mt-4 border-t border-slate-100 flex justify-center">
-                                            <Link to="/app" className="w-full">
-                                                <Button className="w-full bg-slate-900 text-white hover:bg-slate-800">
-                                                    Launch App
-                                                </Button>
-                                            </Link>
-                                        </div>
+
                                     </nav>
                                 </SheetContent>
                             </Sheet>
